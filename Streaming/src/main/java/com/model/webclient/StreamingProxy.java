@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -12,13 +11,11 @@ import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
 
 import com.model.connection.IUDPListener;
 import com.model.connection.UDPConnection;
+import com.model.media.Media;
+import com.model.media.Player;
 
 public class StreamingProxy extends ServiceProxy implements IUDPListener {
 
@@ -28,12 +25,9 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 
     private InetAddress address;
     private UDPConnection connection;
-    private OutputStream outputStream;
-    private FileInputStream inputStream;
     private AudioFormat format;
     private Player player;
     private boolean micro;
-    private SourceDataLine sourceLine;
 
     public StreamingProxy(Client client, String host, int port, boolean micro) {
 	super(client, host, port);
@@ -54,16 +48,17 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 	if (connection == null) {
 	    connection = new UDPConnection(openSocket(), this);
 	}
-
 	try {
-	    if (!micro) {
-		initStreamingFile();
+	    Media media = null;
+	    if (micro) {
+		player = new Player(format);
 	    } else {
-		DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
-
-		sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
-		sourceLine.open(format);
-		sourceLine.start();
+		media = new Media();
+		initStreamingFile();
+		media.setInputStream(new FileInputStream(tempStreaming));
+		media.setAudioFormat(format);
+		player = new Player(media, new FileOutputStream(tempStreaming));
+		player.start();
 	    }
 
 	} catch (Exception e) {
@@ -71,9 +66,6 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 	}
 
 	connection.start();
-	if (!micro) {
-	    initPlayThread();
-	}
 
     }
 
@@ -81,23 +73,11 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 
 	if (tempStreaming == null) {
 	    tempStreaming = new File("./music/streaming-from-server.wav");
-	    if(!tempStreaming.exists()) {
+	    if (!tempStreaming.exists()) {
 		tempStreaming.createNewFile();
 	    }
 	}
 
-	outputStream = new FileOutputStream(tempStreaming);
-
-	inputStream = new FileInputStream(tempStreaming);
-
-    }
-
-    private void initPlayThread() {
-
-	if (player == null) {
-	    player = new Player(format);
-	    player.start();
-	}
     }
 
     private DatagramSocket openSocket() {
@@ -120,51 +100,14 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 	byte[] in = packet.getData();
 	try {
 	    if (micro) {
-		sourceLine.write(in, 0, in.length);
+		player.playRaw(in);
 	    } else {
-		outputStream.write(in);
+		player.play(in);
 	    }
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
 
-    }
-
-    public class Player extends Thread {
-
-	private SourceDataLine sourceLine;
-
-	public Player(AudioFormat format) {
-
-	    DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
-
-	    try {
-		sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
-	    } catch (LineUnavailableException e) {
-		e.printStackTrace();
-	    }
-	}
-
-	@Override
-	public void run() {
-	    byte[] bytes = new byte[1024];
-	    try {
-		sleep(500);
-		sourceLine.open();
-		sourceLine.start();
-		int bytesReaded = 0;
-		while (true) {
-		    if (bytesReaded != -1) {
-
-			bytesReaded = inputStream.read(bytes, 0, bytes.length);
-			sourceLine.write(bytes, 0, bytes.length);
-
-		    }
-		}
-	    } catch (Exception e) {
-
-	    }
-	}
     }
 
 }

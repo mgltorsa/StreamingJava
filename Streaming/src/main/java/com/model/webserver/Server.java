@@ -8,7 +8,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.model.connection.ITCPListener;
 import com.model.media.Media;
-import com.model.media.Microphone;
 
 public class Server implements ITCPListener {
 
@@ -42,12 +41,12 @@ public class Server implements ITCPListener {
 
 	// INIT MICROPHONE STREAMING
 
-	StreamingService microphoneStreaming = new StreamingService(this, 5556, 6666, true);
-	Media microphone = new Microphone();
-	microphoneStreaming.setMedia(microphone);
-	microphone.start();
-	microphoneStreaming.start();
-	addService(microphoneStreaming);
+//	StreamingService microphoneStreaming = new StreamingService(this, 5556, 6666, true);
+//	Media microphone = new Microphone();
+//	microphoneStreaming.setMedia(microphone);
+//	microphone.start();
+//	microphoneStreaming.start();
+//	addService(microphoneStreaming);
 
 	// INIT MEDIA STREAMING
 
