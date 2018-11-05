@@ -79,19 +79,23 @@ public class Client implements ITCPListener {
     }
 
     public void processInputClient(String data) {
+
 	((QueriesProxy) mapServices.get(port)).processInputClient(data);
+
     }
 
     private void initUDPServices() {
-	processInputClient("request-type:query");
-	processInputClient("query:streaming-audio-format");
-	processInputClient("service-on-port:5556");
-	processInputClient("send");
+//	processInputClient("request-type:query");
+//	processInputClient("query:streaming-audio-format");
+//	processInputClient("service-on-port:5556");
+	processInputClient("query=streaming-audio-format,service-on-port:5556");
+//	processInputClient("send");
 
-	processInputClient("request-type:query");
-	processInputClient("query:streaming-audio-format");
-	processInputClient("service-on-port:5557");
-	processInputClient("send");
+//	processInputClient("request-type:query");
+//	processInputClient("query:streaming-audio-format");
+//	processInputClient("service-on-port:5557");
+	processInputClient("query=streaming-audio-format,service-on-port:5557");
+//	processInputClient("send");
 
     }
 
@@ -101,29 +105,52 @@ public class Client implements ITCPListener {
     }
 
     public void onInputMessageData(String data, ITCPListener callback) {
-	JsonParser parser = new JsonParser();
-	JsonObject response = (JsonObject) parser.parse(data);
+	JsonParser parser = new JsonParser();	
+	JsonObject response = (JsonObject) parser.parse(data);	
 	String status = response.get("status").getAsString();
 	if (status.contains("200") || status.contains("OK") || status.equals("200 OK")) {
-	    String query = response.get("query").getAsString();
-	    if (query.equals("streaming-audio-format")) {
-		int port = response.get("service-on-port").getAsInt();
-		initStreamingProxy(response, port);
+	    String requestType = response.get("request-type").getAsString();
+	    if (requestType.equals("query")) {
+		String query = response.get("query").getAsString();
+		if (query.equals("streaming-audio-format")) {
+		    int port = response.get("service-on-port").getAsInt();
+		    initStreamingProxy(response, port);
+		} else if (query.equals("road-status")) {
+		    printRoadStatus(response.get("road-status").getAsJsonObject());
+		} else {
+		    printRawReponseFromServer(response);
+		}
+	    } else if (requestType.equals("bet")) {
+		printRawReponseFromServer(response);
 	    } else {
-		printReponseFromServer(response);
+		printRawReponseFromServer(response);
 	    }
 	}
+
+    }
+
+    private void printRoadStatus(JsonObject json) {
+	String toPrint = "";
+	toPrint += "Distancia: " + json.get("distance").getAsDouble() + "\n";
+	toPrint += "Estado: " + json.get("estado").getAsString() + "\n";
+	toPrint += "Formato:\n" + json.get("formato").getAsString() + "\n";
+	int horses = json.get("cantidad-caballos").getAsInt();
+	for (int i = 1; i <= horses; i++) {
+	    toPrint += i + " : " + json.get(i + "").getAsString() + "\n";
+	}
+
+	System.out.println(toPrint);
 
     }
 
     private void initStreamingProxy(JsonObject audioInfo, int srcPort) {
 
 	int port = -1;
-	boolean micro =false;
+	boolean micro = false;
 	// SRCPORT == MICROPHONE STREAMING PORT
 	if (srcPort == 5556) {
 	    port = 6666;
-	    micro=true;
+	    micro = true;
 	}
 
 	// SRCPORT == MUSIC STREAMING PORT
@@ -133,10 +160,10 @@ public class Client implements ITCPListener {
 	if (mapServices.containsKey(port)) {
 	    System.out.println("Already exist service in port: " + port);
 	    System.out.println("Info server and audio format:");
-	    printReponseFromServer(audioInfo);
+	    printRawReponseFromServer(audioInfo);
 	} else {
 
-	    StreamingProxy streamingProxy = new StreamingProxy(this, port,micro);
+	    StreamingProxy streamingProxy = new StreamingProxy(this, port, micro);
 	    streamingProxy.setAudioFormat(Media.parseFormat(audioInfo));
 	    addService(streamingProxy);
 	    streamingProxy.startConsume();
@@ -144,7 +171,7 @@ public class Client implements ITCPListener {
 
     }
 
-    private void printReponseFromServer(JsonObject audioInfo) {
+    private void printRawReponseFromServer(JsonObject audioInfo) {
 	System.out.println(audioInfo.toString());
 
     }

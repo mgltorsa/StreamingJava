@@ -54,7 +54,7 @@ public class Player extends Thread {
     public void run() {
 
 	byte[] bytes = new byte[1024];
-	setRestVolume(30.0f);
+	setRestVolume(20.0f);
 
 	try {
 	    sleep(500);

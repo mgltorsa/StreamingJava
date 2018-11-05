@@ -7,8 +7,9 @@ import java.util.HashSet;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import com.model.connection.ITCPListener;
+import com.model.connection.TCPConnection;
+import com.model.horses.Road;
 import com.model.media.Media;
 import com.model.media.Microphone;
 
@@ -18,8 +19,10 @@ public class Server implements ITCPListener {
     private HashSet<Service> services;
     private ArrayList<Media> medias;
     private int currentMedia;
+    private Road road;
 
     public Server() {
+	road = new Road(6);
 	mapServices = new HashMap<Integer, Service>();
 	services = new HashSet<Service>();
 	medias = new ArrayList<Media>();
@@ -30,6 +33,7 @@ public class Server implements ITCPListener {
 	initUDPServices();
 	initTCPServices();
 	System.out.println("finish services");
+	initRoad();
 
     }
 
@@ -59,7 +63,9 @@ public class Server implements ITCPListener {
 	Media media = medias.get(currentMedia);
 	media.start();
 	mediaStreaming.setMedia(media);
-	mediaStreaming.start();
+	// TODO
+	// REMEMBER START MEDIA STREAMING
+	// mediaStreaming.start();
 	addService(mediaStreaming);
 
     }
@@ -92,36 +98,90 @@ public class Server implements ITCPListener {
 
 	try {
 	    JsonObject json = (JsonObject) parser.parse(data);
-	    String requestType = json.get("request-type").getAsString();
-	    if (requestType.equals("query")) {
-		response = computeQuery(json);
-	    }
+	    response = computeJsonRequest(json, (TCPConnection) callback);
 
 	} catch (JsonParseException e) {
-	    
+	    response = computeRequest(data, (TCPConnection) callback);
 	}
+
 	callback.onInputMessageData(response.toString(), this);
     }
 
-    private JsonObject computeQuery(JsonObject json) {
-	JsonObject response = new JsonObject();
-	String query = json.get("query").getAsString();
-	if (query.trim().equals("streaming-audio-format")) {
-	    int port = json.get("service-on-port").getAsInt();
-	    Service service = mapServices.get(port);
-	    if (service instanceof StreamingService) {
-		response = ((StreamingService) service).getMedia().getJsonAudioFormat();
-		response.addProperty("status", "200 OK");
-		response.addProperty("query", query);
-		response.addProperty("service-on-port", port);
-	    } else {
-		response.addProperty("status", "400 Bad Request");
-		response.addProperty("info", "not streaming in port requested");
+    private JsonObject computeRequest(String data, TCPConnection connection) {
+	String[] info = data.split("=");
+	JsonObject json = new JsonObject();
+	String requestType = info[0];
+	json.addProperty("request-type", requestType);
+	if (requestType.equalsIgnoreCase("query") || requestType.equalsIgnoreCase("bet")) {
+
+	    String[] infoQuery = info[1].split(",");
+	    String queryContent = infoQuery[0];
+	    json.addProperty(requestType.toLowerCase(), queryContent);
+	    for (int i = 1; i < infoQuery.length; i++) {
+		String[] infos = infoQuery[i].split(":");
+		json.addProperty(infos[0], infos[1]);
 	    }
+
+	}
+	return computeJsonRequest(json, connection);
+    }
+
+    private void initRoad() {
+	new Thread(new Runnable() {
+
+	    public void run() {
+		try {
+		    Thread.sleep(3000);
+		    road.init();
+		    mapServices.get(5557).start();
+		} catch (InterruptedException e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
+
+	    }
+	}).start();
+    }
+
+    private JsonObject computeJsonRequest(JsonObject json, TCPConnection connection) {
+	JsonObject response = new JsonObject();
+
+	String requestType = json.get("request-type").getAsString();
+	if (requestType.equals("query")) {
+
+	    String query = json.get("query").getAsString();
+
+	    if (query.trim().equals("streaming-audio-format")) {
+		int port = json.get("service-on-port").getAsInt();
+		Service service = mapServices.get(port);
+		if (service instanceof StreamingService) {
+		    response = ((StreamingService) service).getMedia().getJsonAudioFormat();
+		    response.addProperty("status", "200 OK");
+		    response.addProperty("service-on-port", port);
+		} else {
+		    response.addProperty("status", "400 Bad Request");
+		    response.addProperty("info", "not streaming in port requested");
+		}
+	    } else if (query.equals("road-status")) {
+		response.addProperty("status", "200 OK");
+		response.add("road-status", road.getInfo(connection.getAddress()));
+	    }
+	    response.addProperty("query", query);
+
+	} else if (requestType.equals("bet")) {
+	    int horse = json.get("horse-id").getAsInt();
+	    String bettor = connection.getAddress();
+	    double bet = json.get("bet").getAsDouble();
+	    String betResponse = road.bet(bettor, horse, bet);
+	    response.addProperty("status", "200 OK");
+	    response.addProperty("bet-response", betResponse);
+
 	} else {
 	    response.addProperty("status", "400 Bad Request");
-	    response.addProperty("info", "not yet implemented");
+	    response.addProperty("info", "invalid request type");
 	}
+
+	response.addProperty("request-type", requestType);
 
 	return response;
 

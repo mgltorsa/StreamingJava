@@ -10,3 +10,45 @@ Client ports:
 6666 : Consume Microphone Streaming
 6667 : Consume Music Streaming.
 6668 : Consume Horse Game.
+
+REQUEST-TYPE:
+query : for queries.
+bet : for bets.
+
+QUERIES:
+streaming-audio-format : for obtain AudioFormat info from server from any streaming service.
+road-status : for obtain status of current road.
+
+Commands:
+
+WITH JSON WRITER :
+For realize any request, type:
+request-type:{REQUEST-TYPE:}
+
+For realize a query, type:
+query:{your query};
+
+specifics{
+	for query 'streaming-audio-format' type the following: service-on-port:{targetPort}
+}
+
+For realize a bet, type:
+horse-id:{horse-id}
+bet:{your bet}
+
+
+
+WITHOUT JSON WRITER :
+
+examples for query: {
+	for query of streaming service : 'query=streaming-audio-format,service-on-port:5556'
+	for road status : 'query=road-status"
+
+}
+
+examples for bet: {
+	for simple bet : 'bet=50.0,horse-id:1'
+}
+
+
+

@@ -53,16 +53,21 @@ public class QueriesProxy extends ServiceProxy implements ITCPListener {
     }
 
     public void processInputClient(String data) {
-	if (data.equalsIgnoreCase("send")) {
-	    this.connection.onInputMessageData(json.toString(), this);
-	    json = new JsonObject();
-	} else {
-	    String[] info = data.split(":");
-	    String property = info[0].trim();
-	    String value = info[1].trim();
-	    json.addProperty(property, value);
-	}
-
+	//Para leer JSON
+//	if (data.equalsIgnoreCase("send")) {
+//	    this.connection.onInputMessageData(json.toString(), this);
+//	    json = new JsonObject();
+//	} else {
+//	    String[] info = data.split(":");
+//	    if (info.length >= 2) {
+//		String property = info[0].trim();
+//		String value = info[1].trim();
+//		json.addProperty(property, value);
+//	    }
+//	}
+	
+	//Para leer normal (SIN JSON)
+	connection.onInputMessageData(data, this);
     }
 
 }
