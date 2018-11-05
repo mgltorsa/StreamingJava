@@ -73,12 +73,12 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 	this.format = format;
     }
 
-    public void onInputDatagram(DatagramPacket packet, IUDPListener callback) {
+    public synchronized void onInputDatagram(DatagramPacket packet, IUDPListener callback) {
 	byte[] in = packet.getData();
 	ByteArrayOutputStream r = new ByteArrayOutputStream();
 	r.write(in, 0, in.length);
 	r.toByteArray();
-	sourceLine.write(in, 0, in.length);
+	sourceLine.write(in, 0, 1024);
     }
 
 }

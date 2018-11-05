@@ -138,32 +138,73 @@ public class Media {
 	openFile();
     }
 
-    public static void main(String[] args) throws Exception {
-	Media m = new Media("./music/Van Halen - Jump.wav");
-	m.start();
-	String s = m.getJsonAudioFormat().toString();
-	System.out.println(s);
-	SourceDataLine sourceLine = null;
+    public static void main(String[] args) throws IOException {
 
-	DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, m.getAudioFormat());
-	try {
-	    sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
-	    sourceLine.open(m.getAudioFormat());
-	    sourceLine.start();
-	    int r = 0;
-	    byte[] data = new byte[1024];
+	new Thread(new Runnable() {
 
-	    while (true) {
-		r=m.getInputStream().read(data, 0, data.length);
-		if(r==-1) {
-		    break;
+	    public void run() {
+		try {
+		    Media m = new Media("./music/Van Halen - Jump.wav");
+		    m.start();
+		    String s = m.getJsonAudioFormat().toString();
+		    System.out.println(s);
+
+		    DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, m.getAudioFormat());
+
+		    SourceDataLine sourceLine = null;
+
+		    sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
+		    sourceLine.open(m.getAudioFormat());
+		    sourceLine.start();
+		    int r = 0;
+		    byte[] data = new byte[1024];
+
+		    while (true) {
+			r = m.getInputStream().read(data, 0, data.length);
+			if (r == -1) {
+			    break;
+			}
+			sourceLine.write(data, 0, data.length);
+		    }
+		} catch (Exception e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
 		}
-		sourceLine.write(data, 0, data.length);
+
 	    }
-	} catch (LineUnavailableException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	}
+	}).start();
+
+	new Thread(new Runnable() {
+
+	    public void run() {
+		Media m = new Microphone();
+		m.start();
+
+		DataLine.Info s2 = new DataLine.Info(SourceDataLine.class, m.getAudioFormat());
+		
+		SourceDataLine sourceLine = null;
+		DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, m.getAudioFormat());
+
+		try {
+		    sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
+		    sourceLine.open(m.getAudioFormat());
+		    sourceLine.start();
+		    int r = 0;
+		    byte[] data = new byte[1024];
+
+		    while (true) {
+			r = m.getInputStream().read(data, 0, data.length);
+			if (r == -1) {
+			    break;
+			}
+			sourceLine.write(data, 0, data.length);
+		    }
+		} catch (Exception e) {
+		    
+		}
+	    }
+	}).start();
+
     }
 
 }

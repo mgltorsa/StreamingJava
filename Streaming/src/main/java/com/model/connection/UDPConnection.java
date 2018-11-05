@@ -34,7 +34,7 @@ public class UDPConnection extends Thread implements IUDPListener {
 
     }
 
-    public void onInputDatagram(DatagramPacket packet, IUDPListener callback) {
+    public synchronized void onInputDatagram(DatagramPacket packet, IUDPListener callback) {
 	if (!socket.isClosed()) {
 	    try {
 		socket.send(packet);
