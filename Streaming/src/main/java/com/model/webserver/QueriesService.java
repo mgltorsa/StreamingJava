@@ -69,4 +69,10 @@ public class QueriesService extends Service implements ITCPListener {
 	getServer().onInputMessageData(data, callback);
     }
 
+    @Override
+    public void stopService() {
+	// TODO Auto-generated method stub
+	
+    }
+
 }

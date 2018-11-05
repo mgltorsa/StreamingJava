@@ -1,11 +1,10 @@
 package com.model.webclient;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -13,7 +12,6 @@ import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
@@ -26,76 +24,80 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 
     private static String ADDRESS_STR = "228.5.6.7";
 
-    private InetAddress address;
-    private AudioFormat format;
-    private SourceDataLine sourceLine;
-    private UDPConnection connection;
-    private FileOutputStream output;
-    private FileInputStream input;
+    private static File tempStreaming;
 
-    public StreamingProxy(Client client, String host, int port) {
+    private InetAddress address;
+    private UDPConnection connection;
+    private OutputStream outputStream;
+    private FileInputStream inputStream;
+    private AudioFormat format;
+    private Player player;
+    private boolean micro;
+    private SourceDataLine sourceLine;
+
+    public StreamingProxy(Client client, String host, int port, boolean micro) {
 	super(client, host, port);
 	try {
 	    address = InetAddress.getByName(host);
 	} catch (UnknownHostException e) {
-	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
 
     }
 
-    public StreamingProxy(Client client, int port) {
-	this(client, ADDRESS_STR, port);
+    public StreamingProxy(Client client, int port, boolean micro) {
+	this(client, ADDRESS_STR, port, micro);
     }
 
     @Override
     public void startConsume() {
-	connection = new UDPConnection(openSocket(), this);
-	try {
-	    File file = File.createTempFile("MusicFromServer", ".wav", new File("./music"));
-	    input = new FileInputStream(file);
-	    output = new FileOutputStream(file);
-	    DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
+	if (connection == null) {
+	    connection = new UDPConnection(openSocket(), this);
+	}
 
-	    sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
-	    sourceLine.open(format);
-	    sourceLine.start();
+	try {
+	    if (!micro) {
+		initStreamingFile();
+	    } else {
+		DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
+
+		sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
+		sourceLine.open(format);
+		sourceLine.start();
+	    }
+
 	} catch (Exception e) {
-	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
 
 	connection.start();
-	initPlayThread();
+	if (!micro) {
+	    initPlayThread();
+	}
+
+    }
+
+    private void initStreamingFile() throws IOException {
+
+	if (tempStreaming == null) {
+	    tempStreaming = new File("./music/streaming-from-server.wav");
+	    if(!tempStreaming.exists()) {
+		tempStreaming.createNewFile();
+	    }
+	}
+
+	outputStream = new FileOutputStream(tempStreaming);
+
+	inputStream = new FileInputStream(tempStreaming);
 
     }
 
     private void initPlayThread() {
 
-	new Thread(new Runnable() {
-
-	    public void run() {
-		byte[] bytes = new byte[1024];
-		try {
-		    while (input.read(bytes) == -1) {
-			Thread.sleep(500);
-		    }
-		    int bytesRead = 0;
-		    while (true) {
-			if (bytesRead != -1) {
-			    sourceLine.write(bytes, 0, bytes.length);
-			    bytesRead = input.read(bytes, 0, bytes.length);
-			}
-
-		    }
-
-		} catch (Exception e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		}
-	    }
-	}).start();
-
+	if (player == null) {
+	    player = new Player(format);
+	    player.start();
+	}
     }
 
     private DatagramSocket openSocket() {
@@ -116,12 +118,52 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
     public synchronized void onInputDatagram(DatagramPacket packet, IUDPListener callback) {
 
 	byte[] in = packet.getData();
-	// TODO
 	try {
-	    output.write(in);
-	} catch (IOException e) {
-	    // TODO Auto-generated catch block
+	    if (micro) {
+		sourceLine.write(in, 0, in.length);
+	    } else {
+		outputStream.write(in);
+	    }
+	} catch (Exception e) {
 	    e.printStackTrace();
+	}
+
+    }
+
+    public class Player extends Thread {
+
+	private SourceDataLine sourceLine;
+
+	public Player(AudioFormat format) {
+
+	    DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
+
+	    try {
+		sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
+	    } catch (LineUnavailableException e) {
+		e.printStackTrace();
+	    }
+	}
+
+	@Override
+	public void run() {
+	    byte[] bytes = new byte[1024];
+	    try {
+		sleep(500);
+		sourceLine.open();
+		sourceLine.start();
+		int bytesReaded = 0;
+		while (true) {
+		    if (bytesReaded != -1) {
+
+			bytesReaded = inputStream.read(bytes, 0, bytes.length);
+			sourceLine.write(bytes, 0, bytes.length);
+
+		    }
+		}
+	    } catch (Exception e) {
+
+	    }
 	}
     }
 

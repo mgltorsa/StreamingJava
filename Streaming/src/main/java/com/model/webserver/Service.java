@@ -24,5 +24,6 @@ public abstract class Service extends Thread{
 	return server;
     }
     
+    public abstract void stopService();
     
 }

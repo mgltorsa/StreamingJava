@@ -2,7 +2,6 @@ package com.model.media;
 
 import java.awt.IllegalComponentStateException;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 
 import javax.sound.sampled.AudioFormat;
@@ -10,11 +9,9 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.sound.sampled.AudioFormat.Encoding;
 
 import com.google.gson.JsonObject;
-
 
 public class Media {
 
@@ -28,9 +25,7 @@ public class Media {
     }
 
     public Media(String srcFile) {
-
 	this.srcFile = srcFile;
-	openFile();
     }
 
     private void openFile() {
@@ -38,15 +33,17 @@ public class Media {
 	if (!file.exists()) {
 	    System.out.println("not exists");
 	}
+	loadInputStream(file);
+
+    }
+
+    private void loadInputStream(File file) {
+
 	try {
 	    input = AudioSystem.getAudioInputStream(file);
 	    int frameSize = ((AudioInputStream) input).getFormat().getFrameSize();
 	    setTargetData(new byte[frameSize]);
-	} catch (UnsupportedAudioFileException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	} catch (IOException e) {
-	    // TODO Auto-generated catch block
+	} catch (Exception e) {
 	    e.printStackTrace();
 	}
 
@@ -82,6 +79,8 @@ public class Media {
     }
 
     public void start() {
+	openFile();
+
 	if (input == null) {
 	    throw new IllegalComponentStateException("First load any input stream");
 	}
@@ -140,13 +139,11 @@ public class Media {
 
     public static void main(String[] args) throws Exception {
 
-	
-	
 	new Thread(new Runnable() {
 
 	    public void run() {
 		try {
-		    Media m = new Media("./music/Van Halen - Jump.wav");
+		    Media m = new Media("./music/Van Halen Jump.wav");
 		    m.start();
 		    String s = m.getJsonAudioFormat().toString();
 		    System.out.println(s);
@@ -165,47 +162,46 @@ public class Media {
 			if (r == -1) {
 			    break;
 			}
-			
+
 			sourceLine.write(data, 0, data.length);
 		    }
 		} catch (Exception e) {
-		    // TODO Auto-generated catch block
 		    e.printStackTrace();
 		}
 
 	    }
 	}).start();
 
-	new Thread(new Runnable() {
-
-	    public void run() {
-		Media m = new Microphone();
-		m.start();
-
-		DataLine.Info s2 = new DataLine.Info(SourceDataLine.class, m.getAudioFormat());
-		
-		SourceDataLine sourceLine = null;
-		DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, m.getAudioFormat());
-
-		try {
-		    sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
-		    sourceLine.open(m.getAudioFormat());
-		    sourceLine.start();
-		    int r = 0;
-		    byte[] data = new byte[1024];
-
-		    while (true) {
-			r = m.getInputStream().read(data, 0, data.length);
-			if (r == -1) {
-			    break;
-			}
-			sourceLine.write(data, 0, data.length);
-		    }
-		} catch (Exception e) {
-		    
-		}
-	    }
-	}).start();
+//	new Thread(new Runnable() {
+//
+//	    public void run() {
+//		Media m = new Microphone();
+//		m.start();
+//
+//		DataLine.Info s2 = new DataLine.Info(SourceDataLine.class, m.getAudioFormat());
+//
+//		SourceDataLine sourceLine = null;
+//		DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, m.getAudioFormat());
+//
+//		try {
+//		    sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
+//		    sourceLine.open(m.getAudioFormat());
+//		    sourceLine.start();
+//		    int r = 0;
+//		    byte[] data = new byte[1024];
+//
+//		    while (true) {
+//			r = m.getInputStream().read(data, 0, data.length);
+//			if (r == -1) {
+//			    break;
+//			}
+//			sourceLine.write(data, 0, data.length);
+//		    }
+//		} catch (Exception e) {
+//
+//		}
+//	    }
+//	}).start();
 
     }
 

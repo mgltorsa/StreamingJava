@@ -6,7 +6,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
-
 import com.model.connection.IUDPListener;
 import com.model.connection.UDPConnection;
 import com.model.media.Media;
@@ -56,38 +55,33 @@ public class StreamingService extends Service implements IUDPListener {
 	}
 
 	byte[] data = null;
-//	if(media.getBufferSize()<1024) {
-//	    data = new byte[media.getBufferSize()];
-//	}
-//	else {
+
 	data = new byte[1024];
-//	}
+
 	int numBytesRead;
 
 	while (true) {
 
 	    try {
 		numBytesRead = media.getInputStream().read(data, 0, data.length);
-
+		
 		if (numBytesRead == -1) {
 		    break;
 		}
 
-		DatagramPacket packet = new DatagramPacket(data, data.length);		
+		DatagramPacket packet = new DatagramPacket(data, data.length);
 		packet.setAddress(address);
 		packet.setPort(getSendPort());
 		connection.onInputDatagram(packet, this);
-		
 	    } catch (Exception e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	    }
 	}
-	media.reload();
+
+	this.media=getServer().assignNextMedia();
 	init();
-
 	
-
     }
 
     public Media getMedia() {
@@ -111,6 +105,11 @@ public class StreamingService extends Service implements IUDPListener {
 
     public void onInputDatagram(DatagramPacket packet, IUDPListener callback) {
 	// TODO
+
+    }
+
+    @Override
+    public void stopService() {
 
     }
 

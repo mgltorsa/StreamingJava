@@ -46,7 +46,7 @@ public class Client implements ITCPListener {
 
     private void initTCPServices() {
 	initClientInput();
-	QueriesProxy queriesProxy = new QueriesProxy(this, host, port,false);
+	QueriesProxy queriesProxy = new QueriesProxy(this, host, port, false);
 	addService(queriesProxy);
 	queriesProxy.startConsume();
     }
@@ -83,10 +83,12 @@ public class Client implements ITCPListener {
     }
 
     private void initUDPServices() {
+	processInputClient("request-type:query");
 	processInputClient("query:streaming-audio-format");
 	processInputClient("service-on-port:5556");
 	processInputClient("send");
 
+	processInputClient("request-type:query");
 	processInputClient("query:streaming-audio-format");
 	processInputClient("service-on-port:5557");
 	processInputClient("send");
@@ -117,9 +119,11 @@ public class Client implements ITCPListener {
     private void initStreamingProxy(JsonObject audioInfo, int srcPort) {
 
 	int port = -1;
+	boolean micro =false;
 	// SRCPORT == MICROPHONE STREAMING PORT
 	if (srcPort == 5556) {
 	    port = 6666;
+	    micro=true;
 	}
 
 	// SRCPORT == MUSIC STREAMING PORT
@@ -132,7 +136,7 @@ public class Client implements ITCPListener {
 	    printReponseFromServer(audioInfo);
 	} else {
 
-	    StreamingProxy streamingProxy = new StreamingProxy(this, port);
+	    StreamingProxy streamingProxy = new StreamingProxy(this, port,micro);
 	    streamingProxy.setAudioFormat(Media.parseFormat(audioInfo));
 	    addService(streamingProxy);
 	    streamingProxy.startConsume();
