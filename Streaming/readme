@@ -1,0 +1,12 @@
+Server ports:
+
+5555 : Server Info
+5556 : Microphone Streaming
+5557 : Music Streaming
+5558 : Horse Game.
+
+Client ports:
+
+6666 : Consume Microphone Streaming
+6667 : Consume Music Streaming.
+6668 : Consume Horse Game.
