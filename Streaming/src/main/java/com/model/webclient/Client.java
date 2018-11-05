@@ -46,7 +46,7 @@ public class Client implements ITCPListener {
 
     private void initTCPServices() {
 	initClientInput();
-	QueriesProxy queriesProxy = new QueriesProxy(this, host, port);
+	QueriesProxy queriesProxy = new QueriesProxy(this, host, port,false);
 	addService(queriesProxy);
 	queriesProxy.startConsume();
     }
