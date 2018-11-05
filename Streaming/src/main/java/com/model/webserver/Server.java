@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.model.connection.ITCPListener;
 import com.model.media.Media;
-import com.model.media.Microphone;
 
 public class Server implements ITCPListener {
 

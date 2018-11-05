@@ -73,18 +73,20 @@ public class StreamingService extends Service implements IUDPListener {
 		    break;
 		}
 
-		DatagramPacket packet = new DatagramPacket(data, data.length);
+		DatagramPacket packet = new DatagramPacket(data, data.length);		
 		packet.setAddress(address);
 		packet.setPort(getSendPort());
 		connection.onInputDatagram(packet, this);
-	    } catch (IOException e) {
+		
+	    } catch (Exception e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	    }
 	}
-
 	media.reload();
 	init();
+
+	
 
     }
 

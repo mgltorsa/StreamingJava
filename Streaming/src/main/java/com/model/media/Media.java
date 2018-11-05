@@ -9,12 +9,12 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.sound.sampled.AudioFormat.Encoding;
 
 import com.google.gson.JsonObject;
+
 
 public class Media {
 
@@ -138,8 +138,10 @@ public class Media {
 	openFile();
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
 
+	
+	
 	new Thread(new Runnable() {
 
 	    public void run() {
@@ -152,7 +154,6 @@ public class Media {
 		    DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, m.getAudioFormat());
 
 		    SourceDataLine sourceLine = null;
-
 		    sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
 		    sourceLine.open(m.getAudioFormat());
 		    sourceLine.start();
@@ -164,6 +165,7 @@ public class Media {
 			if (r == -1) {
 			    break;
 			}
+			
 			sourceLine.write(data, 0, data.length);
 		    }
 		} catch (Exception e) {
