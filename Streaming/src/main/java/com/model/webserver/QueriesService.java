@@ -10,34 +10,41 @@ import javax.net.ssl.SSLServerSocketFactory;
 import com.model.connection.ITCPListener;
 import com.model.connection.TCPConnection;
 
-public class QueriesService extends Service implements ITCPListener{
+public class QueriesService extends Service implements ITCPListener {
+
+    public static final String KEYSTORE_LOCATION = "C:/Users/Asus/Desktop/Desktop/key.jks";
+    public static final String KEYSTORE_PASSWORD = "password";
 
     private HashMap<String, TCPConnection> connections;
     private boolean activeSSL;
 
     public QueriesService(Server server, int port, boolean activeSSL) {
 	super(server, port);
-	this.activeSSL=activeSSL;
-	connections=new HashMap<String, TCPConnection>();
+	this.activeSSL = activeSSL;
+	if (activeSSL) {
+	    System.setProperty("javax.net.ssl.keyStore", KEYSTORE_LOCATION);
+	    System.setProperty("javax.net.ssl.keyStorePassword", KEYSTORE_PASSWORD);
+	}
+	connections = new HashMap<String, TCPConnection>();
     }
 
     @Override
     public void startService() {
 	ServerSocket serverSocket = openServerSocket();
-	while(true) {
+	while (true) {
 	    try {
 		Socket socket = serverSocket.accept();
-		
+
 		TCPConnection connection = new TCPConnection(socket, this);
 		connections.put(connection.getAddress(), connection);
 		connection.start();
-		
+
 	    } catch (IOException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	    }
 	}
-	
+
     }
 
     private ServerSocket openServerSocket() {
@@ -59,8 +66,7 @@ public class QueriesService extends Service implements ITCPListener{
     }
 
     public void onInputMessageData(String data, ITCPListener callback) {
-	getServer().onInputMessageData(data,callback);	
+	getServer().onInputMessageData(data, callback);
     }
 
-  
 }
