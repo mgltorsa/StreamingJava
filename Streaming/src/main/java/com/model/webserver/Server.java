@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import com.model.connection.ITCPListener;
 import com.model.media.Media;
 import com.model.media.Microphone;
@@ -86,13 +88,18 @@ public class Server implements ITCPListener {
 
     public void onInputMessageData(String data, ITCPListener callback) {
 	JsonParser parser = new JsonParser();
-	JsonObject json = (JsonObject) parser.parse(data);
 	JsonObject response = new JsonObject();
-	String requestType = json.get("request-type").getAsString();
-	if (requestType.equals("query")) {
-	    response = computeQuery(json);
-	}
 
+	try {
+	    JsonObject json = (JsonObject) parser.parse(data);
+	    String requestType = json.get("request-type").getAsString();
+	    if (requestType.equals("query")) {
+		response = computeQuery(json);
+	    }
+
+	} catch (JsonParseException e) {
+	    
+	}
 	callback.onInputMessageData(response.toString(), this);
     }
 
@@ -115,7 +122,7 @@ public class Server implements ITCPListener {
 	    response.addProperty("status", "400 Bad Request");
 	    response.addProperty("info", "not yet implemented");
 	}
-	
+
 	return response;
 
     }
