@@ -77,6 +77,7 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 	byte[] in = packet.getData();
 	ByteArrayOutputStream r = new ByteArrayOutputStream();
 	r.write(in, 0, in.length);
+	//TODO
 	r.toByteArray();
 	sourceLine.write(in, 0, 1024);
     }
