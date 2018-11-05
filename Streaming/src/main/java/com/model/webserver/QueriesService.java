@@ -12,7 +12,7 @@ import com.model.connection.TCPConnection;
 
 public class QueriesService extends Service implements ITCPListener {
 
-    public static final String KEYSTORE_LOCATION = "C:/Users/Asus/Desktop/Desktop/key.jks";
+    public static final String KEYSTORE_LOCATION = "./docs/key.jks";
     public static final String KEYSTORE_PASSWORD = "password";
 
     private HashMap<String, TCPConnection> connections;

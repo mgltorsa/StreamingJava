@@ -38,7 +38,7 @@ public class Server implements ITCPListener {
     }
 
     private void initTCPServices() {
-	QueriesService queriesService = new QueriesService(this, 5555, false);
+	QueriesService queriesService = new QueriesService(this, 5555, true);
 	queriesService.start();
 	addService(queriesService);
 

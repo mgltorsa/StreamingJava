@@ -10,7 +10,7 @@ import com.model.connection.TCPConnection;
 
 public class QueriesProxy extends ServiceProxy implements ITCPListener {
 
-    public static final String TRUSTTORE_LOCATION = "C:/Users/Asus/Desktop/Desktop/clientTrusted.jks";
+    public static final String TRUSTTORE_LOCATION = "./docs/key.jks";
 
     private TCPConnection connection;
     private JsonObject json;
