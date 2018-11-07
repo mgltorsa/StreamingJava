@@ -3,8 +3,9 @@ package com.model.webserver;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Scanner;
+
 import com.model.media.Media;
 
 public class TCPStreamingService extends Service {
@@ -16,7 +17,6 @@ public class TCPStreamingService extends Service {
     public TCPStreamingService(Server server, int port) {
 	super(server, port);
 	listeners = new ArrayList<Socket>();
-
     }
 
     @Override
@@ -38,7 +38,6 @@ public class TCPStreamingService extends Service {
     }
 
     public void initStreaming() {
-
 	if (streamingThread == null) {
 	    streamingThread = new Thread(new Runnable() {
 
@@ -62,9 +61,7 @@ public class TCPStreamingService extends Service {
 			    }
 			} catch (IOException e) {
 
-			    e.printStackTrace();
 			}
-
 		    }
 
 		}
@@ -83,7 +80,6 @@ public class TCPStreamingService extends Service {
 	try {
 	    socket = new ServerSocket(getPort());
 	} catch (IOException e) {
-	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
 
@@ -105,28 +101,24 @@ public class TCPStreamingService extends Service {
 	return media;
     }
 
-    public static void main(String[] args) throws UnknownHostException, IOException {
-
-	new Thread(new Runnable() {
-
-	    public void run() {
-		ServerSocket s;
-		try {
-		    s = new ServerSocket(5555);
-
-		    while (true) {
-			System.out.println("listening");
-			Socket so = s.accept();
-			System.out.println("accepted " + so.getInetAddress().getHostAddress() + " on " + so.getPort());
-		    }
-		} catch (Exception e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		}
-
+    public static void main(String[] args) {
+	Scanner sc = new Scanner(System.in);
+	while (true) {
+	    String n = sc.nextLine();
+	    if (n.equals("stop")) {
+		break;
+	    } else if (n.equals("del")) {
+		gotoxy(0, 0);
+	    } else {
+		System.out.println(n);
 	    }
-	}).start();
 
+	}
+	sc.close();
+    }
+
+    static void gotoxy(int line, int row) {
+	System.out.print("\033[" + line + ";" + row + "H");
     }
 
 }

@@ -25,20 +25,18 @@ public class TCPStreamingProxy extends ServiceProxy {
 	while (!connection.isClosed()) {
 	    int bytesReaded = 0;
 	    byte[] bytes = new byte[1024];
-	    while (true) {
-		if (bytesReaded == -1) {
-		    break;
-		}
-		try {
-		    bytesReaded = connection.getInputStream().read(bytes);
-		    p.playRaw(bytes);
-		} catch (IOException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
-		}
+	    if (bytesReaded == -1) {
+		break;
+	    }
+	    try {
+
+		bytesReaded = connection.getInputStream().read(bytes);
+		p.playRaw(bytes);
+	    } catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
 	    }
 	}
-
     }
 
     public void setAudioFormat(AudioFormat format) {
@@ -57,7 +55,5 @@ public class TCPStreamingProxy extends ServiceProxy {
 	}
 	return socket;
     }
-
-  
 
 }

@@ -34,7 +34,6 @@ public class UDPStreamingService extends Service implements IUDPListener {
 	try {
 	    address = InetAddress.getByName(host);
 	} catch (UnknownHostException e) {
-	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
 	this.sendPort = sendPort;

@@ -3,6 +3,7 @@ package com.model.webserver;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
@@ -38,6 +39,7 @@ public class Server implements ITCPListener {
 
     private void initTCPServices() {
 	QueriesService queriesService = new QueriesService(this, 5555, false);
+	queriesService.setName("Queries-service");
 	queriesService.start();
 	addService(queriesService);
 
@@ -50,8 +52,9 @@ public class Server implements ITCPListener {
 	UDPStreamingService microphoneStreaming = new UDPStreamingService(this, 5556, 6666, true);
 	Media microphone = new Microphone();
 	microphoneStreaming.setMedia(microphone);
+	microphoneStreaming.setName("microphone-streaming");
 	microphone.start();
-//	microphoneStreaming.start();
+	microphoneStreaming.start();
 	addService(microphoneStreaming);
 
 	// INIT MEDIA STREAMING
@@ -61,7 +64,7 @@ public class Server implements ITCPListener {
 	media.start();
 
 	TCPStreamingService mediaStreaming = new TCPStreamingService(this, 5557);
-
+	mediaStreaming.setName("media-streaming");
 	mediaStreaming.setMedia(media);
 	mediaStreaming.start();
 	addService(mediaStreaming);
@@ -174,6 +177,18 @@ public class Server implements ITCPListener {
 		    } else {
 			response.addProperty("status", "400 Bad Request");
 			response.addProperty("info", "not streaming in port requested");
+		    }
+		} else if (query.equals("info")) {
+		    java.util.Date d = new java.util.Date();
+		    response.addProperty("date", d.toGMTString());
+		    response.addProperty("services", services.size());
+		    Iterator<Service> it = mapServices.values().iterator();
+		    int i = 1;
+		    while (it.hasNext()) {
+			Service s = it.next();
+			response.addProperty("name-service-" + i, s.getName());
+			response.addProperty("port-service" + i, s.getPort());
+			i++;
 		    }
 		} else if (query.equals("road-status")) {
 		    response.addProperty("status", "200 OK");

@@ -55,9 +55,13 @@ public class Road {
 		    response = addBet(horse, quantity);
 		}
 	    } else {
-		horses.get(horse).addBet(quantity);
-		bets.put(bettor, horses.get(horse));
-		response = "Apuesta exitosa a " + horse + " - " + horses.get(horse).getName();
+		if (horses.containsKey(horse)) {
+		    horses.get(horse).addBet(quantity);
+		    bets.put(bettor, horses.get(horse));
+		    response = "Apuesta exitosa a " + horse + " - " + horses.get(horse).getName();
+		} else {
+		    response = "No existe un caballo con ese id";
+		}
 	    }
 	} else {
 	    response = "La carrera ya ha finalizado, no puede realizar mas apuestas";
