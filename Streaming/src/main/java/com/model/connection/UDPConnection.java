@@ -12,8 +12,12 @@ public class UDPConnection extends Thread implements IUDPListener {
 
     public UDPConnection(DatagramSocket socket, IUDPListener listener) {
 	this.socket = socket;
-	buf = new byte[1024];
+	buf = new byte[10000];
 	this.listener = listener;
+    }
+
+    public void setBufferSize(int bufferSize) {
+	buf = new byte[bufferSize];
     }
 
     @Override

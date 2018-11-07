@@ -41,14 +41,47 @@ public class Client implements ITCPListener {
 
 	initTCPServices();
 
-	initUDPServices();
+//	float sampleRate = 16000f;
+//	int sampleSizeInBits = 16;
+//	int channels = 2;
+//	boolean bigEndian = false;
+//	boolean signed = true;
+//	AudioFormat format = new AudioFormat(sampleRate, sampleSizeInBits, channels, signed, bigEndian);
+//
+//	try {
+//	    MulticastSocket s = new MulticastSocket(8001);
+//	    String ADDRESS_STR = "224.0.0.3";
+//	    DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
+//	    SourceDataLine sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
+//	    sourceLine.open(format);
+//	    sourceLine.start();
+//	    s.joinGroup(InetAddress.getByName(ADDRESS_STR));
+//
+//	    while (true) {
+//		byte[] bytes = new byte[10000];
+//		DatagramPacket p = new DatagramPacket(bytes, bytes.length);
+//		s.receive(p);
+//		byte[] b =p.getData();
+//		System.out.println(b);
+//		sourceLine.write(b, 0, b.length);
+//
+//	    }
+//
+//	} catch (Exception e) {
+//	    // TODO Auto-generated catch block
+//	    e.printStackTrace();
+//	}
+
+//	StreamingProxy a = new StreamingProxy(this, 8001, true);
+//	a.setAudioFormat(format);
+//	a.startConsume();
     }
 
     private void initTCPServices() {
 	initClientInput();
-	QueriesProxy queriesProxy = new QueriesProxy(this, host, port, true);
+	QueriesProxy queriesProxy = new QueriesProxy(this, host, port, false);
 	addService(queriesProxy);
-	queriesProxy.startConsume();
+	queriesProxy.start();
     }
 
     private void initClientInput() {
@@ -67,7 +100,6 @@ public class Client implements ITCPListener {
 			}
 
 		    } catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		    }
 
@@ -84,7 +116,7 @@ public class Client implements ITCPListener {
 
     }
 
-    private void initUDPServices() {
+    public void initStreamingServices() {
 //	processInputClient("request-type:query");
 //	processInputClient("query:streaming-audio-format");
 //	processInputClient("service-on-port:5556");
@@ -105,26 +137,30 @@ public class Client implements ITCPListener {
     }
 
     public void onInputMessageData(String data, ITCPListener callback) {
-	JsonParser parser = new JsonParser();	
-	JsonObject response = (JsonObject) parser.parse(data);	
-	String status = response.get("status").getAsString();
-	if (status.contains("200") || status.contains("OK") || status.equals("200 OK")) {
-	    String requestType = response.get("request-type").getAsString();
-	    if (requestType.equals("query")) {
-		String query = response.get("query").getAsString();
-		if (query.equals("streaming-audio-format")) {
-		    int port = response.get("service-on-port").getAsInt();
-		    initStreamingProxy(response, port);
-		} else if (query.equals("road-status")) {
-		    printRoadStatus(response.get("road-status").getAsJsonObject());
+	JsonParser parser = new JsonParser();
+	try {
+	    JsonObject response = (JsonObject) parser.parse(data);
+	    String status = response.get("status").getAsString();
+	    if (status.contains("200") || status.contains("OK") || status.equals("200 OK")) {
+		String requestType = response.get("request-type").getAsString();
+		if (requestType.equals("query")) {
+		    String query = response.get("query").getAsString();
+		    if (query.equals("streaming-audio-format")) {
+			int port = response.get("service-on-port").getAsInt();
+			initStreamingProxy(response, port);
+		    } else if (query.equals("road-status")) {
+			printRoadStatus(response.get("road-status").getAsJsonObject());
+		    } else {
+			printRawReponseFromServer(response);
+		    }
+		} else if (requestType.equals("bet")) {
+		    printRawReponseFromServer(response);
 		} else {
 		    printRawReponseFromServer(response);
 		}
-	    } else if (requestType.equals("bet")) {
-		printRawReponseFromServer(response);
-	    } else {
-		printRawReponseFromServer(response);
 	    }
+	} catch (Exception e) {
+	    System.out.println(data);
 	}
 
     }
@@ -147,6 +183,7 @@ public class Client implements ITCPListener {
 
 	int port = -1;
 	boolean micro = false;
+	String type = audioInfo.get("connection-type").getAsString();
 	// SRCPORT == MICROPHONE STREAMING PORT
 	if (srcPort == 5556) {
 	    port = 6666;
@@ -162,11 +199,17 @@ public class Client implements ITCPListener {
 	    System.out.println("Info server and audio format:");
 	    printRawReponseFromServer(audioInfo);
 	} else {
+	    ServiceProxy service = null;
+	    if (type.equalsIgnoreCase("TCP")) {
+		service = new TCPStreamingProxy(this, host, srcPort);
+		((TCPStreamingProxy) service).setAudioFormat(Media.parseFormat(audioInfo));
+	    } else if (type.equalsIgnoreCase("UDP")) {
+		service = new StreamingProxy(this, port, micro);
+		((StreamingProxy) service).setAudioFormat(Media.parseFormat(audioInfo));
+	    }
 
-	    StreamingProxy streamingProxy = new StreamingProxy(this, port, micro);
-	    streamingProxy.setAudioFormat(Media.parseFormat(audioInfo));
-	    addService(streamingProxy);
-	    streamingProxy.startConsume();
+	    addService(service);
+	    service.start();
 	}
 
     }

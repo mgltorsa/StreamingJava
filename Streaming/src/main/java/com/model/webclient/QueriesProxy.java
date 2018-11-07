@@ -4,7 +4,6 @@ import java.net.Socket;
 
 import javax.net.ssl.SSLSocketFactory;
 
-import com.google.gson.JsonObject;
 import com.model.connection.ITCPListener;
 import com.model.connection.TCPConnection;
 
@@ -13,12 +12,10 @@ public class QueriesProxy extends ServiceProxy implements ITCPListener {
     public static final String TRUSTTORE_LOCATION = "./docs/key.jks";
 
     private TCPConnection connection;
-    private JsonObject json;
     private boolean activateSSL;
 
     public QueriesProxy(Client client, String host, int port, boolean activateSSL) {
 	super(client, host, port);
-	json = new JsonObject();
 	this.activateSSL = activateSSL;
 	if (activateSSL) {
 	    System.setProperty("javax.net.ssl.trustStore", TRUSTTORE_LOCATION);
@@ -30,6 +27,7 @@ public class QueriesProxy extends ServiceProxy implements ITCPListener {
     public void startConsume() {
 	connection = new TCPConnection(openSocket(), this);
 	connection.start();
+	getClient().initStreamingServices();
     }
 
     private Socket openSocket() {
@@ -53,7 +51,7 @@ public class QueriesProxy extends ServiceProxy implements ITCPListener {
     }
 
     public void processInputClient(String data) {
-	//Para leer JSON
+	// Para leer JSON
 //	if (data.equalsIgnoreCase("send")) {
 //	    this.connection.onInputMessageData(json.toString(), this);
 //	    json = new JsonObject();
@@ -65,8 +63,8 @@ public class QueriesProxy extends ServiceProxy implements ITCPListener {
 //		json.addProperty(property, value);
 //	    }
 //	}
-	
-	//Para leer normal (SIN JSON)
+
+	// Para leer normal (SIN JSON)
 	connection.onInputMessageData(data, this);
     }
 

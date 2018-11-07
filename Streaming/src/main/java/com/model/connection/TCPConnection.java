@@ -57,6 +57,10 @@ public class TCPConnection extends Thread implements ITCPListener {
 	    out.println(input);
 	}
     }
+    
+    public boolean isClosed() {
+	return socket.isClosed();
+    }
 
     private void openOutputStream() {
 

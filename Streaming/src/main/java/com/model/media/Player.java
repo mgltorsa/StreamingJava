@@ -1,10 +1,13 @@
 package com.model.media;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.FloatControl;
@@ -18,69 +21,79 @@ public class Player extends Thread {
 //    private static int currentInfo = 0;
 
     private SourceDataLine sourceLine;
-    private OutputStream output;
     private InputStream input;
+    private AudioFormat format;
+    private OutputStream output;
 
     public Player(AudioFormat format) {
-
-//	if (mixerInfo == null) {
-//	    Info[] infos = AudioSystem.getMixerInfo();
-//	    mixerInfo = new Info[2];
-//	    mixerInfo[0] = infos[0];
-//	    mixerInfo[1] = infos[1];
-//	}
-//	    Mixer m = AudioSystem.getMixer(mixerInfo[currentInfo]);
-//	    sourceLine = AudioSystem.getSourceDataLine(format, mixerInfo[currentInfo++]);
-
+	this.format = format;
 	DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
 	try {
 	    sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
 	    sourceLine.open(format);
 	    sourceLine.start();
+	    restVolume(20.0f);
 	} catch (LineUnavailableException e) {
 	    e.printStackTrace();
 	}
     }
 
-    public Player(Media media, OutputStream stream) {
-
+    public Player(Media media, FileOutputStream fileOutputStream) {
 	this(media.getAudioFormat());
-	output = stream;
 	input = media.getInputStream();
-
+	output = fileOutputStream;
     }
 
     @Override
     public void run() {
+	byte[] data = new byte[1024];
+	int bytesReaded = 0;
+	while (true) {
+	    try {
+		bytesReaded = input.read(data, 0, data.length);
+		if (bytesReaded > 0) {
+		    sourceLine.write(data, 0, data.length);
 
-	byte[] bytes = new byte[1024];
-	setRestVolume(20.0f);
-
-	try {
-	    sleep(500);
-	    int bytesReaded = 0;
-	    while (true) {
-		if (bytesReaded != -1) {
-		    bytesReaded = input.read(bytes, 0, bytes.length);
-		    sourceLine.write(bytes, 0, bytes.length);
 		}
+	    } catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
 	    }
-	} catch (Exception e) {
 
 	}
     }
 
-    private void setRestVolume(float f) {
+    private void restVolume(float f) {
 	((FloatControl) sourceLine.getControl(FloatControl.Type.MASTER_GAIN)).setValue(-f);
     }
 
     public synchronized void play(byte[] bytes) {
-	try {
-	    output.write(bytes, 0, bytes.length);
-	} catch (IOException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
+
+	if (input == null) {
+	    playRaw(bytes);
+	} else {
+	    try {
+		output.write(bytes, 0, bytes.length);
+	    } catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
 	}
+    }
+
+    private void playAudio() {
+	byte[] buffer = new byte[10000];
+	try {
+	    int count;
+	    while ((count = input.read(buffer, 0, buffer.length)) != -1) {
+		if (count > 0) {
+		    sourceLine.write(buffer, 0, count);
+		}
+	    }
+	} catch (Exception e) {
+	    // TODO: handle exception
+	}
+
     }
 
     public synchronized void playRaw(byte[] bytes) {

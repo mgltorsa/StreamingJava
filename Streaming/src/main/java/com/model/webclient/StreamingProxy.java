@@ -20,6 +20,8 @@ import com.model.media.Player;
 public class StreamingProxy extends ServiceProxy implements IUDPListener {
 
     private static String ADDRESS_STR = "228.5.6.7";
+//    private static String ADDRESS_STR = "224.0.0.3";
+
 
     private static File tempStreaming;
 
@@ -36,6 +38,8 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 	} catch (UnknownHostException e) {
 	    e.printStackTrace();
 	}
+	
+	this.micro=micro;
 
     }
 
@@ -58,6 +62,7 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 		media.setInputStream(new FileInputStream(tempStreaming));
 		media.setAudioFormat(format);
 		player = new Player(media, new FileOutputStream(tempStreaming));
+		//TODO 
 		player.start();
 	    }
 
@@ -98,15 +103,7 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
     public synchronized void onInputDatagram(DatagramPacket packet, IUDPListener callback) {
 
 	byte[] in = packet.getData();
-	try {
-	    if (micro) {
-		player.playRaw(in);
-	    } else {
-		player.play(in);
-	    }
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
+	player.play(in);
 
     }
 

@@ -10,24 +10,26 @@ import com.model.connection.IUDPListener;
 import com.model.connection.UDPConnection;
 import com.model.media.Media;
 
-public class StreamingService extends Service implements IUDPListener {
+public class UDPStreamingService extends Service implements IUDPListener {
 
     private static String ADDRESS_STR = "228.5.6.7";
+//    private static String ADDRESS_STR = "224.0.0.3";
+
 
     private InetAddress address;
     private Media media;
     private int sendPort;
     private UDPConnection connection;
 
-    public StreamingService(Server server, String host, int port, int sendPort) {
+    public UDPStreamingService(Server server, String host, int port, int sendPort) {
 	this(server, host, port, sendPort, true);
     }
 
-    public StreamingService(Server server, int port, int sendPort, boolean transfer) {
+    public UDPStreamingService(Server server, int port, int sendPort, boolean transfer) {
 	this(server, ADDRESS_STR, port, sendPort, transfer);
     }
 
-    public StreamingService(Server server, String host, int port, int sendPort, boolean transfer) {
+    public UDPStreamingService(Server server, String host, int port, int sendPort, boolean transfer) {
 	super(server, port);
 	try {
 	    address = InetAddress.getByName(host);
@@ -56,7 +58,7 @@ public class StreamingService extends Service implements IUDPListener {
 
 	byte[] data = null;
 
-	data = new byte[1024];
+	data = new byte[10000];
 
 	int numBytesRead;
 
@@ -64,7 +66,7 @@ public class StreamingService extends Service implements IUDPListener {
 
 	    try {
 		numBytesRead = media.getInputStream().read(data, 0, data.length);
-		
+
 		if (numBytesRead == -1) {
 		    break;
 		}
@@ -79,9 +81,9 @@ public class StreamingService extends Service implements IUDPListener {
 	    }
 	}
 
-	this.media=getServer().assignNextMedia();
+	this.media = getServer().assignNextMedia();
 	init();
-	
+
     }
 
     public Media getMedia() {
@@ -95,7 +97,7 @@ public class StreamingService extends Service implements IUDPListener {
     private DatagramSocket openSocket() {
 	try {
 	    MulticastSocket socket = new MulticastSocket(getPort());
-	    socket.joinGroup(address);
+//	    socket.joinGroup(address);
 	    return socket;
 	} catch (IOException e) {
 	    return null;

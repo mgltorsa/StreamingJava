@@ -30,43 +30,48 @@ public class Server implements ITCPListener {
     }
 
     public void start() {
-	initUDPServices();
+	initStreamingServices();
 	initTCPServices();
 	System.out.println("finish services");
 	initRoad();
-
     }
 
     private void initTCPServices() {
-	QueriesService queriesService = new QueriesService(this, 5555, true);
+	QueriesService queriesService = new QueriesService(this, 5555, false);
 	queriesService.start();
 	addService(queriesService);
 
     }
 
-    private void initUDPServices() {
+    private void initStreamingServices() {
 
 	// INIT MICROPHONE STREAMING
 
-	StreamingService microphoneStreaming = new StreamingService(this, 5556, 6666, true);
+	UDPStreamingService microphoneStreaming = new UDPStreamingService(this, 5556, 6666, true);
 	Media microphone = new Microphone();
 	microphoneStreaming.setMedia(microphone);
 	microphone.start();
-	microphoneStreaming.start();
+//	microphoneStreaming.start();
 	addService(microphoneStreaming);
 
 	// INIT MEDIA STREAMING
 
-	StreamingService mediaStreaming = new StreamingService(this, 5557, 6667, true);
 	generateMediaList();
-
 	Media media = medias.get(currentMedia);
 	media.start();
+
+	TCPStreamingService mediaStreaming = new TCPStreamingService(this, 5557);
+
 	mediaStreaming.setMedia(media);
-	// TODO
-	// REMEMBER START MEDIA STREAMING
-	// mediaStreaming.start();
+	mediaStreaming.start();
 	addService(mediaStreaming);
+
+//	UDPStreamingService mediaStreaming = new UDPStreamingService(this, 5557, 6667, true);
+//
+//	media.start();
+//	mediaStreaming.setMedia(media);
+//	mediaStreaming.start();
+//	addService(mediaStreaming);
 
     }
 
@@ -87,9 +92,10 @@ public class Server implements ITCPListener {
 	mapServices.put(service.getPort(), service);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 	Server s = new Server();
 	s.start();
+
     }
 
     public void onInputMessageData(String data, ITCPListener callback) {
@@ -133,7 +139,7 @@ public class Server implements ITCPListener {
 		try {
 		    Thread.sleep(3000);
 		    road.init();
-		    mapServices.get(5557).start();
+		    ((TCPStreamingService) mapServices.get(5557)).initStreaming();
 		} catch (InterruptedException e) {
 		    // TODO Auto-generated catch block
 		    e.printStackTrace();
@@ -147,38 +153,49 @@ public class Server implements ITCPListener {
 	JsonObject response = new JsonObject();
 
 	String requestType = json.get("request-type").getAsString();
-	if (requestType.equals("query")) {
+	try {
+	    if (requestType.equals("query")) {
 
-	    String query = json.get("query").getAsString();
+		String query = json.get("query").getAsString();
 
-	    if (query.trim().equals("streaming-audio-format")) {
-		int port = json.get("service-on-port").getAsInt();
-		Service service = mapServices.get(port);
-		if (service instanceof StreamingService) {
-		    response = ((StreamingService) service).getMedia().getJsonAudioFormat();
+		if (query.trim().equals("streaming-audio-format")) {
+		    int port = json.get("service-on-port").getAsInt();
+		    Service service = mapServices.get(port);
+		    if (service instanceof UDPStreamingService) {
+			response = ((UDPStreamingService) service).getMedia().getJsonAudioFormat();
+			response.addProperty("status", "200 OK");
+			response.addProperty("connection-type", "UDP");
+			response.addProperty("service-on-port", port);
+		    } else if (service instanceof TCPStreamingService) {
+			response = ((TCPStreamingService) service).getMedia().getJsonAudioFormat();
+			response.addProperty("status", "200 OK");
+			response.addProperty("connection-type", "TCP");
+			response.addProperty("service-on-port", port);
+		    } else {
+			response.addProperty("status", "400 Bad Request");
+			response.addProperty("info", "not streaming in port requested");
+		    }
+		} else if (query.equals("road-status")) {
 		    response.addProperty("status", "200 OK");
-		    response.addProperty("service-on-port", port);
-		} else {
-		    response.addProperty("status", "400 Bad Request");
-		    response.addProperty("info", "not streaming in port requested");
+		    response.add("road-status", road.getInfo(connection.getAddress()));
 		}
-	    } else if (query.equals("road-status")) {
+		response.addProperty("query", query);
+
+	    } else if (requestType.equals("bet")) {
+		int horse = json.get("horse-id").getAsInt();
+		String bettor = connection.getAddress();
+		double bet = json.get("bet").getAsDouble();
+		String betResponse = road.bet(bettor, horse, bet);
 		response.addProperty("status", "200 OK");
-		response.add("road-status", road.getInfo(connection.getAddress()));
+		response.addProperty("bet-response", betResponse);
+
+	    } else {
+		response.addProperty("status", "400 Bad Request");
+		response.addProperty("info", "invalid request type");
 	    }
-	    response.addProperty("query", query);
-
-	} else if (requestType.equals("bet")) {
-	    int horse = json.get("horse-id").getAsInt();
-	    String bettor = connection.getAddress();
-	    double bet = json.get("bet").getAsDouble();
-	    String betResponse = road.bet(bettor, horse, bet);
-	    response.addProperty("status", "200 OK");
-	    response.addProperty("bet-response", betResponse);
-
-	} else {
-	    response.addProperty("status", "400 Bad Request");
-	    response.addProperty("info", "invalid request type");
+	} catch (Exception e) {
+	    response.addProperty("status", "500 Internal error");
+	    response.addProperty("info", e.getMessage());
 	}
 
 	response.addProperty("request-type", requestType);

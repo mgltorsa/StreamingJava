@@ -41,7 +41,7 @@ public class Media {
 
 	try {
 	    input = AudioSystem.getAudioInputStream(file);
-	    int frameSize = ((AudioInputStream) input).getFormat().getFrameSize();
+	    int frameSize = ((AudioInputStream) input).getFormat().getSampleSizeInBits() / 8;
 	    setTargetData(new byte[frameSize]);
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -51,6 +51,7 @@ public class Media {
 
     public Media(AudioFormat format) {
 	this.format = format;
+
     }
 
     public Media(InputStream input) {
@@ -58,8 +59,8 @@ public class Media {
     }
 
     public Media(InputStream input, AudioFormat format) {
-	this.input = input;
-	this.format = format;
+	setInputStream(input);
+	setAudioFormat(format);
     }
 
     public void setInputStream(InputStream stream) {
@@ -84,8 +85,20 @@ public class Media {
 	if (input == null) {
 	    throw new IllegalComponentStateException("First load any input stream");
 	}
-	format = ((AudioInputStream) input).getFormat();
+	setAudioFormat(((AudioInputStream) input).getFormat());
+	//TODO
+//	setAudioFormat(createDefaultFormat());
 
+    }
+
+    public AudioFormat createDefaultFormat() {
+	float sampleRate = 16000f;
+	int sampleSizeInBits = 16;
+	int channels = 2;
+	boolean bigEndian = false;
+	boolean signed = true;
+	format = new AudioFormat(sampleRate, sampleSizeInBits, channels, signed, bigEndian);
+	return format;
     }
 
     public JsonObject getJsonAudioFormat() {
@@ -127,6 +140,10 @@ public class Media {
 
     public void setAudioFormat(AudioFormat format) {
 	this.format = format;
+	float sampleRate = format.getSampleRate();
+	int sizeInBytes = format.getSampleSizeInBits() / 8;
+	setTargetData(new byte[(int) (sampleRate * sizeInBytes) / 2]);
+
     }
 
     public void setTargetData(byte[] targetData) {
