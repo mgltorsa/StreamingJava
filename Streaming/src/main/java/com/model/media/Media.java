@@ -28,10 +28,10 @@ public class Media {
 	this.srcFile = srcFile;
     }
 
-    private void openFile() {
+    private void openFile() throws IllegalComponentStateException{
 	File file = new File(srcFile);
 	if (!file.exists()) {
-	    System.out.println("not exists");
+	   throw new IllegalComponentStateException("src file path doesn't exist");
 	}
 	loadInputStream(file);
 
@@ -79,7 +79,7 @@ public class Media {
 	return input;
     }
 
-    public void start() {
+    public void start() throws IllegalComponentStateException {
 	openFile();
 
 	if (input == null) {
