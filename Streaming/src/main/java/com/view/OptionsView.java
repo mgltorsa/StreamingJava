@@ -1,5 +1,7 @@
 package com.view;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -9,7 +11,9 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+
 import javafx.scene.layout.AnchorPane;
+import javafx.util.StringConverter;
 
 public class OptionsView {
 
@@ -45,13 +49,35 @@ public class OptionsView {
 	SpinnerValueFactory<Double> factory = new SpinnerValueFactory.DoubleSpinnerValueFactory(0, Double.MAX_VALUE, 0,
 		0.5);
 	spnBet.setValueFactory(factory);
+	spnBet.focusedProperty().addListener(new ChangeListener<Boolean>() {
+
+	    public void changed(ObservableValue<? extends Boolean> arg0, Boolean arg1, Boolean nv) {
+		
+		if(nv) {
+		    return;
+		}
+		
+		if (!spnBet.isEditable()) return;
+		    String text = spnBet.getEditor().getText();
+		    SpinnerValueFactory<Double> valueFactory = spnBet.getValueFactory();
+		    if (valueFactory != null) {
+		        StringConverter<Double> converter = valueFactory.getConverter();
+		        if (converter != null) {
+		            Double value = converter.fromString(text);
+		            valueFactory.setValue(value);
+		        }
+		    }
+		
+	    }
+	});
 	spnBet.setEditable(true);
+	
 	btnUpdateRoad.setText(COMMAND_UPDATE_STREAMING);
 	btnBet.setText(COMMAND_BET);
 	chbAudioStream.setText(COMMAND_AUDIO_STREAMING);
 	chbRoadStream.setText(COMMAND_ROAD_STREAMING);
 	chbAudioStream.setSelected(true);
-	
+
     }
 
     public Node getContentPane() {
