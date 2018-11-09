@@ -4,15 +4,15 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 import com.model.media.Media;
 
 public class TCPStreamingService extends Service {
 
-    private ArrayList<Socket> listeners;
+    private volatile ArrayList<Socket> listeners;
     private volatile Media media;
     private Thread streamingThread;
+    private ServerSocket serverSocket;
 
     public TCPStreamingService(Server server, int port) {
 	super(server, port);
@@ -21,10 +21,9 @@ public class TCPStreamingService extends Service {
 
     @Override
     public void startService() {
-	ServerSocket serverSocket = openSocket();
+	serverSocket = openSocket();
 	while (true) {
 	    try {
-		System.out.println("listening");
 		Socket socket = serverSocket.accept();
 
 		listeners.add(socket);
@@ -99,26 +98,6 @@ public class TCPStreamingService extends Service {
 
     public Media getMedia() {
 	return media;
-    }
-
-    public static void main(String[] args) {
-	Scanner sc = new Scanner(System.in);
-	while (true) {
-	    String n = sc.nextLine();
-	    if (n.equals("stop")) {
-		break;
-	    } else if (n.equals("del")) {
-		gotoxy(0, 0);
-	    } else {
-		System.out.println(n);
-	    }
-
-	}
-	sc.close();
-    }
-
-    static void gotoxy(int line, int row) {
-	System.out.print("\033[" + line + ";" + row + "H");
     }
 
 }

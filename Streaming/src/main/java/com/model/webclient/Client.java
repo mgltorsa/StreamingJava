@@ -3,6 +3,8 @@ package com.model.webclient;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -15,6 +17,7 @@ public class Client implements ITCPListener {
 
     private HashMap<Integer, ServiceProxy> mapServices;
     private HashSet<ServiceProxy> services;
+    private ArrayList<ITCPListener> listenersOnClient;
     private int port;
     private String host;
 
@@ -30,56 +33,27 @@ public class Client implements ITCPListener {
 	this("localhost", 5555);
     }
 
+    public void addListener(ITCPListener listener) {
+	this.listenersOnClient.add(listener);
+    }
+
     public Client(String host, int port) {
 	mapServices = new HashMap<Integer, ServiceProxy>();
 	services = new HashSet<ServiceProxy>();
+	listenersOnClient = new ArrayList<ITCPListener>();
 	this.port = port;
 	this.host = host;
     }
 
-    public void start() {
+    public void start() throws UnknownHostException, IOException {
 
 	initTCPServices();
 
-//	float sampleRate = 16000f;
-//	int sampleSizeInBits = 16;
-//	int channels = 2;
-//	boolean bigEndian = false;
-//	boolean signed = true;
-//	AudioFormat format = new AudioFormat(sampleRate, sampleSizeInBits, channels, signed, bigEndian);
-//
-//	try {
-//	    MulticastSocket s = new MulticastSocket(8001);
-//	    String ADDRESS_STR = "224.0.0.3";
-//	    DataLine.Info sourceInfo = new DataLine.Info(SourceDataLine.class, format);
-//	    SourceDataLine sourceLine = (SourceDataLine) AudioSystem.getLine(sourceInfo);
-//	    sourceLine.open(format);
-//	    sourceLine.start();
-//	    s.joinGroup(InetAddress.getByName(ADDRESS_STR));
-//
-//	    while (true) {
-//		byte[] bytes = new byte[10000];
-//		DatagramPacket p = new DatagramPacket(bytes, bytes.length);
-//		s.receive(p);
-//		byte[] b =p.getData();
-//		System.out.println(b);
-//		sourceLine.write(b, 0, b.length);
-//
-//	    }
-//
-//	} catch (Exception e) {
-//	    // TODO Auto-generated catch block
-//	    e.printStackTrace();
-//	}
-
-//	StreamingProxy a = new StreamingProxy(this, 8001, true);
-//	a.setAudioFormat(format);
-//	a.startConsume();
     }
 
-    private void initTCPServices() {
+    private void initTCPServices() throws UnknownHostException, IOException {
 	initClientInput();
-	QueriesProxy queriesProxy = new QueriesProxy(this, host, port, false);
+	TCPQueriesProxy queriesProxy = new TCPQueriesProxy(this, host, port, true);
 	addService(queriesProxy);
 	queriesProxy.start();
     }
@@ -95,7 +69,13 @@ public class Client implements ITCPListener {
 			line = br.readLine();
 			if (line.equalsIgnoreCase("stop")) {
 			    break;
-			} else {
+			} else if (line.equalsIgnoreCase("l")) {
+			    mapServices.get(5557).setListen(false);
+			} else if (line.equalsIgnoreCase("n")) {
+			    mapServices.get(5557).setListen(true);
+			}
+
+			else {
 			    processInputClient(line);
 			}
 
@@ -110,25 +90,15 @@ public class Client implements ITCPListener {
 
     }
 
-    public void processInputClient(String data) {
+    public void processInputClient(String data) throws IllegalArgumentException {
 
-	((QueriesProxy) mapServices.get(port)).processInputClient(data);
+	((TCPQueriesProxy) getServiceOnPort(port)).processInputClient(data);
 
     }
 
     public void initStreamingServices() {
-//	processInputClient("request-type:query");
-//	processInputClient("query:streaming-audio-format");
-//	processInputClient("service-on-port:5556");
 	processInputClient("query=streaming-audio-format,service-on-port:5556");
-//	processInputClient("send");
-
-//	processInputClient("request-type:query");
-//	processInputClient("query:streaming-audio-format");
-//	processInputClient("service-on-port:5557");
 	processInputClient("query=streaming-audio-format,service-on-port:5557");
-//	processInputClient("send");
-
     }
 
     private void addService(ServiceProxy service) {
@@ -149,7 +119,9 @@ public class Client implements ITCPListener {
 			int port = response.get("service-on-port").getAsInt();
 			initStreamingProxy(response, port);
 		    } else if (query.equals("road-status")) {
-			printRoadStatus(response.get("road-status").getAsJsonObject());
+			if (listenersOnClient.isEmpty()) {
+			    printRoadStatus(response.get("road-status").getAsJsonObject());
+			}
 		    } else {
 			printRawReponseFromServer(response);
 		    }
@@ -159,10 +131,19 @@ public class Client implements ITCPListener {
 		    printRawReponseFromServer(response);
 		}
 	    }
+
+	    callbackListeners(data);
 	} catch (Exception e) {
+	    e.printStackTrace();
 	    System.out.println(data);
 	}
 
+    }
+
+    private void callbackListeners(String data) {
+	for (int i = 0; i < listenersOnClient.size(); i++) {
+	    listenersOnClient.get(i).onInputMessageData(data, this);
+	}
     }
 
     private void printRoadStatus(JsonObject json) {
@@ -179,7 +160,7 @@ public class Client implements ITCPListener {
 
     }
 
-    private void initStreamingProxy(JsonObject audioInfo, int srcPort) {
+    private void initStreamingProxy(JsonObject audioInfo, int srcPort) throws UnknownHostException, IOException {
 
 	int port = -1;
 	boolean micro = false;
@@ -203,12 +184,15 @@ public class Client implements ITCPListener {
 	    if (type.equalsIgnoreCase("TCP")) {
 		service = new TCPStreamingProxy(this, host, srcPort);
 		((TCPStreamingProxy) service).setAudioFormat(Media.parseFormat(audioInfo));
+		services.add(service);
+		mapServices.put(port, service);
 	    } else if (type.equalsIgnoreCase("UDP")) {
-		service = new StreamingProxy(this, port, micro);
-		((StreamingProxy) service).setAudioFormat(Media.parseFormat(audioInfo));
+		service = new UDPStreamingProxy(this, port, micro);
+		((UDPStreamingProxy) service).setAudioFormat(Media.parseFormat(audioInfo));
+		addService(service);
+
 	    }
 
-	    addService(service);
 	    service.start();
 	}
 
@@ -219,8 +203,41 @@ public class Client implements ITCPListener {
 
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException, IOException {
 	Client client = new Client();
 	client.start();
+    }
+
+    public void bet(String horse, double bet) {
+	String query = "bet=" + bet + ",horse-id:" + horse;
+	executeQuery(query);
+
+    }
+
+    public void executeQuery(String query) throws IllegalArgumentException {
+	processInputClient(query);
+    }
+
+    public ServiceProxy getServiceOnPort(int proxyPort) throws IllegalArgumentException {
+	ServiceProxy proxy = mapServices.get(proxyPort);
+	if (proxy == null) {
+	    throw new IllegalArgumentException("There is no proxy on port");
+	}
+	return proxy;
+
+    }
+
+    public void setListenOnPort(int proxyPort, boolean listen) throws IllegalArgumentException {
+	ServiceProxy proxy = mapServices.get(proxyPort);
+	if (proxy == null) {
+	    throw new IllegalArgumentException("There is no proxy on port " + proxyPort);
+	}
+	proxy.setListen(listen);
+    }
+
+    public void setRoadStreamingListen(boolean listen) {
+	TCPQueriesProxy proxy = (TCPQueriesProxy) getServiceOnPort(5555);
+	proxy.setRoadStreaming(listen);
+
     }
 }

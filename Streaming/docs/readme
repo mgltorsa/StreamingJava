@@ -9,7 +9,6 @@ Client ports:
 
 6666 : Consume Microphone Streaming
 6667 : Consume Music Streaming.
-6668 : Consume Horse Game.
 
 REQUEST-TYPE:
 query : for queries.

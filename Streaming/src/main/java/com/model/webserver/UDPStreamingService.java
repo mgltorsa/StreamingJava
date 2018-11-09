@@ -15,7 +15,6 @@ public class UDPStreamingService extends Service implements IUDPListener {
     private static String ADDRESS_STR = "228.5.6.7";
 //    private static String ADDRESS_STR = "224.0.0.3";
 
-
     private InetAddress address;
     private Media media;
     private int sendPort;
@@ -57,16 +56,26 @@ public class UDPStreamingService extends Service implements IUDPListener {
 
 	byte[] data = null;
 
+//	data = new byte[21250];
 	data = new byte[10000];
 
-	int numBytesRead;
 
+	int numBytesRead;
+	boolean broke = false;
 	while (true) {
 
 	    try {
+
+		if (broke) {
+		    break;
+		}
+
+//		for (int i = 0; i < 8 && !broke; i++) {
+
 		numBytesRead = media.getInputStream().read(data, 0, data.length);
 
 		if (numBytesRead == -1) {
+		    broke = true;
 		    break;
 		}
 
@@ -74,6 +83,8 @@ public class UDPStreamingService extends Service implements IUDPListener {
 		packet.setAddress(address);
 		packet.setPort(getSendPort());
 		connection.onInputDatagram(packet, this);
+//		}
+//		Thread.sleep(300);
 	    } catch (Exception e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();

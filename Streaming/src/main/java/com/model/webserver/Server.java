@@ -1,16 +1,20 @@
 package com.model.webserver;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import javax.swing.Timer;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.model.connection.ITCPListener;
 import com.model.connection.TCPConnection;
-import com.model.horses.Road;
+import com.model.horses.Race;
 import com.model.media.Media;
 import com.model.media.Microphone;
 
@@ -20,10 +24,10 @@ public class Server implements ITCPListener {
     private HashSet<Service> services;
     private ArrayList<Media> medias;
     private int currentMedia;
-    private Road road;
+    private Race race;
 
     public Server() {
-	road = new Road(6);
+	race = new Race(6);
 	mapServices = new HashMap<Integer, Service>();
 	services = new HashSet<Service>();
 	medias = new ArrayList<Media>();
@@ -38,7 +42,7 @@ public class Server implements ITCPListener {
     }
 
     private void initTCPServices() {
-	QueriesService queriesService = new QueriesService(this, 5555, false);
+	TCPQueriesService queriesService = new TCPQueriesService(this, 5555, true);
 	queriesService.setName("Queries-service");
 	queriesService.start();
 	addService(queriesService);
@@ -63,18 +67,17 @@ public class Server implements ITCPListener {
 	Media media = medias.get(currentMedia);
 	media.start();
 
-	TCPStreamingService mediaStreaming = new TCPStreamingService(this, 5557);
-	mediaStreaming.setName("media-streaming");
-	mediaStreaming.setMedia(media);
-	mediaStreaming.start();
-	addService(mediaStreaming);
-
-//	UDPStreamingService mediaStreaming = new UDPStreamingService(this, 5557, 6667, true);
-//
-//	media.start();
+//	TCPStreamingService mediaStreaming = new TCPStreamingService(this, 5557);
+//	mediaStreaming.setName("media-streaming");
 //	mediaStreaming.setMedia(media);
 //	mediaStreaming.start();
 //	addService(mediaStreaming);
+
+	UDPStreamingService mediaStreaming = new UDPStreamingService(this, 5557, 6667, true);
+
+	media.start();
+	mediaStreaming.setMedia(media);
+	addService(mediaStreaming);
 
     }
 
@@ -102,6 +105,7 @@ public class Server implements ITCPListener {
     }
 
     public void onInputMessageData(String data, ITCPListener callback) {
+
 	JsonParser parser = new JsonParser();
 	JsonObject response = new JsonObject();
 
@@ -136,22 +140,28 @@ public class Server implements ITCPListener {
     }
 
     private void initRoad() {
-	new Thread(new Runnable() {
+	Timer t = new Timer(10000, new ActionListener() {
 
-	    public void run() {
-		try {
-		    Thread.sleep(3000);
-		    road.init();
-		    ((TCPStreamingService) mapServices.get(5557)).initStreaming();
-		} catch (InterruptedException e) {
-		    // TODO Auto-generated catch block
-		    e.printStackTrace();
+	    public void actionPerformed(ActionEvent e) {
+
+		race.init();
+
+		// 5557 puerto musica
+		Service service = mapServices.get(5557);
+		if (service instanceof UDPStreamingService) {
+		    ((UDPStreamingService) service).startService();
+
+		} else if (service instanceof TCPStreamingService) {
+		    ((TCPStreamingService) service).initStreaming();
 		}
 
 	    }
-	}).start();
+	});
+	t.start();
+
     }
 
+    @SuppressWarnings("deprecation")
     private JsonObject computeJsonRequest(JsonObject json, TCPConnection connection) {
 	JsonObject response = new JsonObject();
 
@@ -192,7 +202,8 @@ public class Server implements ITCPListener {
 		    }
 		} else if (query.equals("road-status")) {
 		    response.addProperty("status", "200 OK");
-		    response.add("road-status", road.getInfo(connection.getAddress()));
+		    response.add("road-status", race.getInfo(connection.getAddress()));
+		    response.addProperty("query", query);
 		}
 		response.addProperty("query", query);
 
@@ -200,10 +211,9 @@ public class Server implements ITCPListener {
 		int horse = json.get("horse-id").getAsInt();
 		String bettor = connection.getAddress();
 		double bet = json.get("bet").getAsDouble();
-		String betResponse = road.bet(bettor, horse, bet);
+		String betResponse = race.bet(bettor, horse, bet);
 		response.addProperty("status", "200 OK");
 		response.addProperty("bet-response", betResponse);
-
 	    } else {
 		response.addProperty("status", "400 Bad Request");
 		response.addProperty("info", "invalid request type");

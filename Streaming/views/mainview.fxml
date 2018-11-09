@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.AnchorPane?>
+
+
+<AnchorPane fx:id="contentPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="531.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.view.MainView">
+   <children>
+      <ScrollPane fitToHeight="true" fitToWidth="true" layoutX="14.0" layoutY="14.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="307.0" prefWidth="611.0" />
+      <AnchorPane layoutX="14.0" layoutY="391.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="126.0" prefWidth="611.0" />
+      <Label layoutX="103.0" layoutY="331.0" text="Distancia total" />
+      <Label layoutX="235.0" layoutY="331.0" text="Estado de la carrera" />
+      <Label fx:id="lblRoadDistance" layoutX="103.0" layoutY="356.0" />
+      <Label fx:id="lblRoadState" layoutX="235.0" layoutY="356.0" />
+      <CheckBox fx:id="chbConnected" layoutX="468.0" layoutY="331.0" mnemonicParsing="false" text="Conectado al servidor" />
+   </children>
+</AnchorPane>

@@ -17,11 +17,10 @@ import com.model.connection.UDPConnection;
 import com.model.media.Media;
 import com.model.media.Player;
 
-public class StreamingProxy extends ServiceProxy implements IUDPListener {
+public class UDPStreamingProxy extends ServiceProxy implements IUDPListener {
 
     private static String ADDRESS_STR = "228.5.6.7";
 //    private static String ADDRESS_STR = "224.0.0.3";
-
 
     private static File tempStreaming;
 
@@ -31,24 +30,24 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
     private Player player;
     private boolean micro;
 
-    public StreamingProxy(Client client, String host, int port, boolean micro) {
+    public UDPStreamingProxy(Client client, String host, int port, boolean micro) {
 	super(client, host, port);
 	try {
 	    address = InetAddress.getByName(host);
 	} catch (UnknownHostException e) {
 	    e.printStackTrace();
 	}
-	
-	this.micro=micro;
+
+	this.micro = micro;
 
     }
 
-    public StreamingProxy(Client client, int port, boolean micro) {
+    public UDPStreamingProxy(Client client, int port, boolean micro) {
 	this(client, ADDRESS_STR, port, micro);
     }
 
     @Override
-    public void startConsume() {
+    public synchronized void startConsume() {
 	if (connection == null) {
 	    connection = new UDPConnection(openSocket(), this);
 	}
@@ -62,7 +61,7 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 		media.setInputStream(new FileInputStream(tempStreaming));
 		media.setAudioFormat(format);
 		player = new Player(media, new FileOutputStream(tempStreaming));
-		//TODO 
+		// TODO
 		player.start();
 	    }
 
@@ -71,6 +70,7 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
 	}
 
 	connection.start();
+	notifyAll();
 
     }
 
@@ -103,8 +103,25 @@ public class StreamingProxy extends ServiceProxy implements IUDPListener {
     public synchronized void onInputDatagram(DatagramPacket packet, IUDPListener callback) {
 
 	byte[] in = packet.getData();
+	
 	player.play(in);
 
+    }
+
+    @Override
+    public synchronized void setListen(boolean listen) {
+	
+	
+	while (connection == null) {
+	    try {
+		wait();
+	    } catch (InterruptedException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
+	}
+	this.connection.setListen(listen);
+	player.setListen(listen);
     }
 
 }

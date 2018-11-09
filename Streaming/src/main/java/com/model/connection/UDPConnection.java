@@ -9,11 +9,40 @@ public class UDPConnection extends Thread implements IUDPListener {
     private byte[] buf;
     private DatagramSocket socket;
     private IUDPListener listener;
+    private boolean listen;
 
     public UDPConnection(DatagramSocket socket, IUDPListener listener) {
 	this.socket = socket;
 	buf = new byte[10000];
 	this.listener = listener;
+	this.listen = true;
+    }
+
+    public void setListen(boolean listen) {
+	boolean oldListen = this.listen;
+	this.listen = listen;
+	if (listen && !oldListen) {
+	    this.listen = listen;
+	    init();
+	}
+    }
+
+    private void init() {
+	new Thread(new Runnable() {
+
+	    public void run() {
+		while (!socket.isClosed() && listen) {
+		    DatagramPacket inPacket = new DatagramPacket(buf, buf.length);
+		    try {
+			socket.receive(inPacket);
+			onReadData(inPacket);
+		    } catch (IOException e) {
+			e.printStackTrace();
+		    }
+		}
+
+	    }
+	}).start();
     }
 
     public void setBufferSize(int bufferSize) {
@@ -22,15 +51,7 @@ public class UDPConnection extends Thread implements IUDPListener {
 
     @Override
     public void run() {
-	while (!socket.isClosed()) {
-	    DatagramPacket inPacket = new DatagramPacket(buf, buf.length);
-	    try {
-		socket.receive(inPacket);
-		onReadData(inPacket);
-	    } catch (IOException e) {
-		e.printStackTrace();
-	    }
-	}
+	init();
     }
 
     private void onReadData(DatagramPacket packet) {
@@ -43,7 +64,6 @@ public class UDPConnection extends Thread implements IUDPListener {
 	    try {
 		socket.send(packet);
 	    } catch (IOException e) {
-		// TODO Auto-generated catch block
 		e.printStackTrace();
 	    }
 	}

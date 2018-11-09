@@ -1,14 +1,15 @@
 package com.model.webclient;
 
-public abstract class ServiceProxy extends Thread{
+import java.io.IOException;
+import java.net.UnknownHostException;
+
+public abstract class ServiceProxy {
 
     private int port;
     private String host;
     private Client client;
 
-  
-
-    public ServiceProxy(Client client,String host, int port) {
+    public ServiceProxy(Client client, String host, int port) {
 	this.host = host;
 	this.port = port;
 	this.client = client;
@@ -30,10 +31,12 @@ public abstract class ServiceProxy extends Thread{
 	return client;
     }
 
-    public abstract void startConsume();
-    
-    @Override
-    public void run() {
-        startConsume();
+    public abstract void startConsume() throws UnknownHostException, IOException;
+
+    public abstract void setListen(boolean listen);
+
+    public void start() throws UnknownHostException, IOException {
+	startConsume();
+
     }
 }

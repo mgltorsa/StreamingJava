@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class Horse {
 
-    public final static Random rs = new Random();
+    private Random rs;
 
     private int id;
     private String name;
@@ -15,7 +15,8 @@ public class Horse {
     public Horse(int id, String name) {
 	this.id = id;
 	this.name = name;
-	this.speed = rs.nextDouble() * 60;
+	rs= new Random();
+	this.speed = rs.nextInt(60);
     }
 
     public Horse(int id) {
@@ -50,8 +51,8 @@ public class Horse {
     }
 
     public double advance(double time) {
-	speed = rs.nextDouble() * 7;
 	distanceRoaded += speed * time;
+	speed = rs.nextInt(100);
 	return distanceRoaded;
     }
 }

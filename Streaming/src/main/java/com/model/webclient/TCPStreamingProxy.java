@@ -12,31 +12,59 @@ public class TCPStreamingProxy extends ServiceProxy {
 
     private Socket connection;
     private AudioFormat format;
+    private Player player;
+    private boolean listen;
 
     public TCPStreamingProxy(Client client, String host, int port) {
 	super(client, host, port);
+	this.listen = false;
     }
 
     @Override
     public void startConsume() {
+	this.listen = true;
 
-	connection = openSocket();
-	Player p = new Player(format);
-	while (!connection.isClosed()) {
-	    int bytesReaded = 0;
-	    byte[] bytes = new byte[1024];
-	    if (bytesReaded == -1) {
-		break;
-	    }
-	    try {
+	if (connection == null) {
+	    new Thread(new Runnable() {
 
-		bytesReaded = connection.getInputStream().read(bytes);
-		p.playRaw(bytes);
-	    } catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    }
+		public void run() {
+		    connection = openSocket();
+		    player = new Player(format);
+		    init();
+		}
+	    }).start();
+
 	}
+
+	init();
+
+    }
+
+    private void init() {
+
+	new Thread(new Runnable() {
+
+	    public void run() {
+		while (connection != null && !connection.isClosed()) {
+		    int bytesReaded = 0;
+		    byte[] bytes = new byte[1024];
+
+		    try {
+
+			bytesReaded = connection.getInputStream().read(bytes);
+			if (bytesReaded == -1) {
+			    break;
+			}
+			if (listen && player != null) {
+			    player.playRaw(bytes);
+			}
+		    } catch (IOException e) {
+			break;
+		    }
+		}
+	    }
+	}).start();
+
     }
 
     public void setAudioFormat(AudioFormat format) {
@@ -54,6 +82,11 @@ public class TCPStreamingProxy extends ServiceProxy {
 	    e.printStackTrace();
 	}
 	return socket;
+    }
+
+    @Override
+    public void setListen(boolean listen) {
+	this.listen = listen;
     }
 
 }

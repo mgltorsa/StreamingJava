@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 import com.google.gson.JsonObject;
 
-public class Road {
+public class Race {
 
     public static final double advanceTime = 20;
 
@@ -25,46 +25,66 @@ public class Road {
 
     private double distance;
 
-    public Road() {
+    public Race() {
 	this(0, 1000);
     }
 
-    public Road(int numHorses) {
-	this(numHorses, 10000000);
+    public Race(int numHorses) {
+	this(numHorses, 1000000);
     }
 
-    public Road(int numHorses, double distance) {
+    public Race(double distance, String... horses) {
+	this(distance);
+	if (horses == null) {
+	    throw new NullPointerException("horses was null");
+	}
+	for (int i = 1; i <= horses.length; i++) {
+	    this.horses.put(i, new Horse(i, horses[i - 1]));
+
+	}
+    }
+
+    public Race(double distance) {
+	this.distance = distance;
 	horses = new HashMap<Integer, Horse>();
 	bets = new HashMap<String, Horse>();
+	state = 0;
+    }
+
+    public Race(int numHorses, double distance) {
+	this(distance);
 	for (int i = 1; i <= numHorses; i++) {
 	    horses.put(i, new Horse(i));
 	}
-	state = 0;
-	this.distance = distance;
     }
 
     public String bet(String bettor, int horse, double quantity) {
-	Horse bettorHorse = bets.get(bettor);
 	String response = "";
-	if (state == NOT_STARTED_ROAD || state == STARTED_ROAD) {
-	    if (bettorHorse != null) {
-		if (bettorHorse.getId() != horse) {
-		    response = "La apuesta no se puede realizar a un caballo diferente.\n"
-			    + "El identificador de su caballo es: " + bettorHorse.getId();
+
+	if (state != NOT_STARTED_ROAD) {
+	    response = "No puede apostar una vez la carrera ha iniciado";
+	} else {
+	    Horse bettorHorse = bets.get(bettor);
+	    if (state == NOT_STARTED_ROAD || state == STARTED_ROAD) {
+		if (bettorHorse != null) {
+		    if (bettorHorse.getId() != horse) {
+			response = "La apuesta no se puede realizar a un caballo diferente.\n"
+				+ "El identificador de su caballo es: " + bettorHorse.getId();
+		    } else {
+			response = addBet(horse, quantity);
+		    }
 		} else {
-		    response = addBet(horse, quantity);
+		    if (horses.containsKey(horse)) {
+			horses.get(horse).addBet(quantity);
+			bets.put(bettor, horses.get(horse));
+			response = "Apuesta exitosa a " + horse + " - " + horses.get(horse).getName();
+		    } else {
+			response = "No existe un caballo con ese id";
+		    }
 		}
 	    } else {
-		if (horses.containsKey(horse)) {
-		    horses.get(horse).addBet(quantity);
-		    bets.put(bettor, horses.get(horse));
-		    response = "Apuesta exitosa a " + horse + " - " + horses.get(horse).getName();
-		} else {
-		    response = "No existe un caballo con ese id";
-		}
+		response = "La carrera ya ha finalizado, no puede realizar mas apuestas";
 	    }
-	} else {
-	    response = "La carrera ya ha finalizado, no puede realizar mas apuestas";
 	}
 	return response;
     }
@@ -138,7 +158,7 @@ public class Road {
 	json.addProperty("estado", (state == 0 ? "no iniciada" : state == 1 ? "iniciada" : "finalizada"));
 	json.addProperty("cantidad-caballos", horses.size());
 	json.addProperty("formato",
-		"Posición en la carrera : Caballo - Identificador - velocidadActual - distancia recorrida - apuestas / observaciones");
+		"Posición en la carrera : Caballo - Identificador - velocidadActual - distancia recorrida - apuestas - observaciones");
 
 	DecimalFormat ff = new DecimalFormat("#.##");
 	for (int i = 0; i < horses.size(); i++) {
@@ -148,7 +168,7 @@ public class Road {
 		    + ff.format(h.getDistanceRoaded()) + " - " + ff.format(h.getBet());
 
 	    if (targetHorse != null && targetHorse.getId() == h.getId()) {
-		info += " - " + "<- Su caballo";
+		info += " - " + "Su caballo";
 	    }
 
 	    json.addProperty((i + 1) + "", info);

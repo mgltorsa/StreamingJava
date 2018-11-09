@@ -10,7 +10,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import com.model.connection.ITCPListener;
 import com.model.connection.TCPConnection;
 
-public class QueriesService extends Service implements ITCPListener {
+public class TCPQueriesService extends Service implements ITCPListener {
 
     public static final String KEYSTORE_LOCATION = "./docs/key.jks";
     public static final String KEYSTORE_PASSWORD = "password";
@@ -18,7 +18,7 @@ public class QueriesService extends Service implements ITCPListener {
     private HashMap<String, TCPConnection> connections;
     private boolean activeSSL;
 
-    public QueriesService(Server server, int port, boolean activeSSL) {
+    public TCPQueriesService(Server server, int port, boolean activeSSL) {
 	super(server, port);
 	this.activeSSL = activeSSL;
 	if (activeSSL) {
@@ -75,8 +75,6 @@ public class QueriesService extends Service implements ITCPListener {
 	
     }
     
-    public static void main(String[] args) {
-	
-    }
+   
 
 }

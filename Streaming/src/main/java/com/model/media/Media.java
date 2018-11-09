@@ -15,7 +15,7 @@ import com.google.gson.JsonObject;
 
 public class Media {
 
-    private InputStream input;
+    private volatile InputStream input;
     private AudioFormat format;
     private byte[] targetData;
     private String srcFile;
