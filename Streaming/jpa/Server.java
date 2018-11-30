@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -152,6 +153,7 @@ public class Server implements HttpHandler {
 		byte[] output = null;
 		int status = 200;
 		try {
+		
 			switch (request) {
 			case "GET":
 
@@ -160,16 +162,26 @@ public class Server implements HttpHandler {
 
 			case "POST":
 
-				output = processPost(exchange);
+				
+					output = processPost(exchange);
+				
 
 				break;
 			}
 
-		} catch (Exception e) {
-			status = 500;
-			output = "Invalid login".getBytes();
-			e.printStackTrace();
-		} finally {
+		} catch (SQLException e) {
+			status=500;
+			exchange.sendResponseHeaders(status, 0);
+		} catch (IOException e) {
+			status=404;
+			exchange.sendResponseHeaders(status, 0);
+		}catch (IllegalAccessException e) {
+			status = 400;
+			exchange.sendResponseHeaders(status, 0);
+
+		}
+	
+			
 			exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
 			OutputStream out = exchange.getResponseBody();
@@ -179,11 +191,10 @@ public class Server implements HttpHandler {
 			out.write(output);
 
 			out.close();
-		}
 
 	}
 
-	private byte[] processPost(HttpExchange exchange) throws Exception {
+	private byte[] processPost(HttpExchange exchange) throws SQLException, IOException, IllegalAccessException {
 		String readInput = "";
 		byte[] response = null;
 
@@ -221,7 +232,7 @@ public class Server implements HttpHandler {
 				fileOut.close();
 				response=pathClient.getBytes();
 			} else {
-				throw new Exception("Invalid Data");
+				throw new IllegalAccessException("Invalid Data");
 			}
 
 		}
@@ -333,19 +344,17 @@ public class Server implements HttpHandler {
 		return response;
 	}
 
-	private byte[] processGet(HttpExchange exchange) {
+	private byte[] processGet(HttpExchange exchange) throws IOException {
 		String path = exchange.getRequestURI().getPath();
 		byte[] outputBytes = null;
-		try {
+	
 			outputBytes = getFileResponse(path);
-		} catch (Exception e) {
-
-		}
+		
 
 		return outputBytes;
 	}
 
-	private byte[] getFileResponse(String path) throws Exception {
+	private byte[] getFileResponse(String path) throws IOException  {
 
 		byte[] outputBytes = null;
 
