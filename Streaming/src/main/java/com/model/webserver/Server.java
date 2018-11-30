@@ -20,6 +20,9 @@ import com.model.media.Microphone;
 
 public class Server implements ITCPListener {
 
+    
+    public static final int TIME = 30000;
+    
     private HashMap<Integer, Service> mapServices;
     private HashSet<Service> services;
     private ArrayList<Media> medias;
@@ -67,17 +70,17 @@ public class Server implements ITCPListener {
 	Media media = medias.get(currentMedia);
 	media.start();
 
-//	TCPStreamingService mediaStreaming = new TCPStreamingService(this, 5557);
-//	mediaStreaming.setName("media-streaming");
-//	mediaStreaming.setMedia(media);
-//	mediaStreaming.start();
-//	addService(mediaStreaming);
-
-	UDPStreamingService mediaStreaming = new UDPStreamingService(this, 5557, 6667, true);
-
-	media.start();
+	TCPStreamingService mediaStreaming = new TCPStreamingService(this, 5557);
+	mediaStreaming.setName("media-streaming");
 	mediaStreaming.setMedia(media);
+	mediaStreaming.start();
 	addService(mediaStreaming);
+
+//	UDPStreamingService mediaStreaming = new UDPStreamingService(this, 5557, 6667, true);
+//
+//	media.start();
+//	mediaStreaming.setMedia(media);
+//	addService(mediaStreaming);
 
     }
 
@@ -140,7 +143,7 @@ public class Server implements ITCPListener {
     }
 
     private void initRoad() {
-	Timer t = new Timer(10000, new ActionListener() {
+	Timer t = new Timer(TIME, new ActionListener() {
 
 	    public void actionPerformed(ActionEvent e) {
 

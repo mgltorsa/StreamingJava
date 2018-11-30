@@ -6,6 +6,24 @@
 	<artifactId>Streaming</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<dependencies>
+	<!-- https://mvnrepository.com/artifact/com.sun.net.httpserver/http -->
+<dependency>
+    <groupId>com.sun.net.httpserver</groupId>
+    <artifactId>http</artifactId>
+    <version>20070405</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+<dependency>
+    <groupId>org.jsoup</groupId>
+    <artifactId>jsoup</artifactId>
+    <version>1.8.3</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.apache.derby/derby -->
+
+	
+	
 		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
 		<dependency>
 			<groupId>com.google.code.gson</groupId>

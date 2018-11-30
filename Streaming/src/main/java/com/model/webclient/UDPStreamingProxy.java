@@ -19,6 +19,8 @@ import com.model.media.Player;
 
 public class UDPStreamingProxy extends ServiceProxy implements IUDPListener {
 
+    
+    //SAMPLE RATE 19140,2,4,19140,false
     private static String ADDRESS_STR = "228.5.6.7";
 //    private static String ADDRESS_STR = "224.0.0.3";
 

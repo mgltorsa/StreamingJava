@@ -197,7 +197,7 @@ public class Controller extends Application implements ITCPListener {
 
 	int qHorses = json.get("cantidad-caballos").getAsInt();
 	final String[][] horses = new String[qHorses][7];
-
+	
 	int id = 1;
 	int name = 0;
 	int speed = 2;
